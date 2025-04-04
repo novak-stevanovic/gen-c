@@ -124,7 +124,7 @@ void _gc_arr_push_back(_GCArray* array, const void* data, gc_status* out_status)
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL,
  *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void gc_arr_remove_at(_GCArray* array, size_t pos, gc_status* out_status);
+void gc_arr_remove(_GCArray* array, size_t pos, gc_status* out_status);
 
 /* Removes the last element inside the array.
  * STATUS CODES:
@@ -156,7 +156,7 @@ void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status);
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL. */
 
-void gc_arr_shrink(_GCArray* array, gc_status* out_status);
+void gc_arr_fit(_GCArray* array, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 

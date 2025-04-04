@@ -3,7 +3,7 @@
 #include "_gc_shared.h"
 #include <string.h>
 
-void _gc_array_init(_GCArray* array, size_t cap,
+void _gc_arr_init(_GCArray* array, size_t cap,
         size_t el_size, gc_status* out_status)
 {
     if(array == NULL) 
@@ -32,7 +32,7 @@ void _gc_array_init(_GCArray* array, size_t cap,
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void _gc_array_destroy(_GCArray* array, gc_status* out_status)
+void gc_arr_destroy(_GCArray* array, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -51,7 +51,7 @@ void _gc_array_destroy(_GCArray* array, gc_status* out_status)
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void* _gc_array_at(const _GCArray* array, size_t pos, gc_status* out_status)
+void* _gc_arr_at(const _GCArray* array, size_t pos, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -62,11 +62,11 @@ void* _gc_array_at(const _GCArray* array, size_t pos, gc_status* out_status)
         GC_RETURN(NULL, out_status, GC_ERR_OUT_OF_BOUNDS);   
     }
 
-    void* addr = __gc_array_at(array, pos);
+    void* addr = __gc_arr_at(array, pos);
     GC_RETURN(addr, out_status, GC_SUCCESS);
 }
 
-void _gc_array_set(_GCArray* array, const void* data, size_t pos,
+void _gc_arr_set(_GCArray* array, const void* data, size_t pos,
         gc_status* out_status)
 {
     if(array == NULL) 
@@ -82,14 +82,14 @@ void _gc_array_set(_GCArray* array, const void* data, size_t pos,
         GC_VRETURN(out_status, GC_ERR_OUT_OF_BOUNDS);   
     }
 
-    void* addr = __gc_array_at(array, pos);
+    void* addr = __gc_arr_at(array, pos);
 
     memcpy(addr, data, array->_el_size);
 
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void _gc_array_insert(_GCArray* array, const void* data, size_t pos,
+void _gc_arr_insert(_GCArray* array, const void* data, size_t pos,
         gc_status* out_status)
 {
     if(array == NULL) 
@@ -110,14 +110,14 @@ void _gc_array_insert(_GCArray* array, const void* data, size_t pos,
         GC_VRETURN(out_status, GC_ERR_ARRAY_NO_CAP);   
     }
 
-    __gc_array_insert_at(array, pos, data, 1);
+    __gc_arr_insert(array, pos, data, 1);
 
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void _gc_array_push_back(_GCArray* array, const void* data, gc_status* out_status)
+void _gc_arr_push_back(_GCArray* array, const void* data, gc_status* out_status)
 {
-    _gc_array_insert(array, data, array->_size, out_status);
+    _gc_arr_insert(array, data, array->_size, out_status);
 
     if(out_status == NULL) return;
 
@@ -137,7 +137,7 @@ void _gc_array_push_back(_GCArray* array, const void* data, gc_status* out_statu
     }
 }
 
-void _gc_array_remove_at(_GCArray* array, size_t pos, gc_status* out_status)
+void gc_arr_remove(_GCArray* array, size_t pos, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -148,12 +148,12 @@ void _gc_array_remove_at(_GCArray* array, size_t pos, gc_status* out_status)
         GC_VRETURN(out_status, GC_ERR_OUT_OF_BOUNDS);   
     }
     
-    __gc_array_remove_at(array, pos, pos + 1);
+    __gc_arr_remove(array, pos, pos + 1);
 
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void _gc_array_pop_back(_GCArray* array, gc_status* out_status)
+void gc_arr_pop_back(_GCArray* array, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -167,7 +167,7 @@ void _gc_array_pop_back(_GCArray* array, gc_status* out_status)
     array->_size--;
 }
 
-void _gc_array_reserve(_GCArray* array, size_t capacity, gc_status* out_status)
+void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -197,7 +197,7 @@ void _gc_array_reserve(_GCArray* array, size_t capacity, gc_status* out_status)
     }
 }
 
-void _gc_array_shrink_to_fit(_GCArray* array, gc_status* out_status)
+void gc_arr_fit(_GCArray* array, gc_status* out_status)
 {
     if(array == NULL) 
     {

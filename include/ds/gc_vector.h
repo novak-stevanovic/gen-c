@@ -148,7 +148,7 @@ void gc_vec_reserve(_GCVector* vector, size_t capacity, gc_status* out_status);
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'vector' is NULL. */
 
-void gc_vec_shrink(_GCVector* vector, gc_status* out_status);
+void gc_vec_fit(_GCVector* vector, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 

@@ -2,12 +2,12 @@
 #include <string.h>
 #include "ds/_gc_array.h"
 
-void __gc_array_insert_at(_GCArray* array, size_t pos, const void* data_arr,
+void __gc_arr_insert(_GCArray* array, size_t pos, const void* data_arr,
         size_t data_size)
 {
     if(data_size == 0) return;
 
-    void* start_pos = __gc_array_at(array, pos);
+    void* start_pos = __gc_arr_at(array, pos);
 
     size_t bytes_inserted = data_size * array->_el_size;
 
@@ -23,11 +23,11 @@ void __gc_array_insert_at(_GCArray* array, size_t pos, const void* data_arr,
     array->_size += data_size;
 }
 
-void __gc_array_remove_at(_GCArray* array, size_t start_pos,
+void __gc_arr_remove(_GCArray* array, size_t start_pos,
         size_t end_pos)
 {
-    void* _start_pos = __gc_array_at(array, start_pos);
-    void* _end_pos = __gc_array_at(array, end_pos);
+    void* _start_pos = __gc_arr_at(array, start_pos);
+    void* _end_pos = __gc_arr_at(array, end_pos);
 
     size_t elements_shifted = array->_size - end_pos;
 
