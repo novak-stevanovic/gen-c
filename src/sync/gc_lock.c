@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <poll.h>
 
-void gc_lock_init(GCLock* lock, gc_err* out_err)
+void gc_lock_init(GCLock* lock, gc_status* out_err)
 {
     int pipe_status = pipe(lock->_pipefd);
 
@@ -47,7 +47,7 @@ void gc_lock_init(GCLock* lock, gc_err* out_err)
     GC_VRETURN(out_err, GC_SUCCESS);
 }
 
-void gc_lock_destroy(GCLock* lock, gc_err* out_err)
+void gc_lock_destroy(GCLock* lock, gc_status* out_err)
 {
     int close_status;
     while(1)
@@ -83,7 +83,7 @@ void gc_lock_destroy(GCLock* lock, gc_err* out_err)
     GC_VRETURN(out_err, GC_SUCCESS);
 }
 
-void gc_lock_wait(GCLock* lock, gc_err* out_err)
+void gc_lock_wait(GCLock* lock, gc_status* out_err)
 {
     struct pollfd read_poll_data = {
         .fd = lock->_pipefd[0],
@@ -125,7 +125,7 @@ void gc_lock_wait(GCLock* lock, gc_err* out_err)
     GC_VRETURN(out_err, GC_SUCCESS);
 }
 
-void gc_lock_signal(GCLock* lock, gc_err* out_err)
+void gc_lock_signal(GCLock* lock, gc_status* out_err)
 {
     char a = 1;
     while(1)
@@ -139,7 +139,7 @@ void gc_lock_signal(GCLock* lock, gc_err* out_err)
         if(errno == EAGAIN) break; // no more space in buffer, write unnecessary
         else if(errno == EPIPE)
         {
-            gc_err err;
+            gc_status err;
 
             gc_lock_destroy(lock, &err);
             if(err != GC_SUCCESS)

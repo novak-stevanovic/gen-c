@@ -12,147 +12,224 @@ typedef struct _GCVector
     _GCArray _base;
 } _GCVector;
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
-/* Initializes the vector with specified values. Dynamically allocates enough
+/* INTERNAL FUNCTION - use a vector-specific macro instead.
+ *
+ * Initializes the vector with specified values. Dynamically allocates enough
  * memory to store 'capacity' elements.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL, 'init_capacity' is 0 or 'el_size' is 0,
- *   2. GC_ERR_MALLOC_FAIL - Dynamic allocation for the vector's data failed. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL, 'init_capacity' is 0 or 'el_size' is 0,
+ *   3. GC_ERR_MALLOC_FAIL - Dynamic allocation for the vector's data failed. */
 
-void _gc_vector_init(_GCVector* vector, size_t init_capacity,
-        size_t el_size, gc_err* out_err);
+void _gc_vec_init(_GCVector* vector, size_t init_capacity,
+        size_t el_size, gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
 /* Destroys the vector. Sets its fields to default values. Frees the dynamically
  * allocated memory for vector's data field.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL. */
 
-void _gc_vector_destroy(_GCVector* vector, gc_err* out_err);
+void gc_vec_destroy(_GCVector* vector, gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
-/* Returns address of element with position 'pos' inside the vector.
+/* INTERNAL FUNCTION - use a vector-specific macro instead.
+ *
+ * Returns address of element with position 'pos' inside the vector.
  *
  * RETURN VALUE:
  *   ON SUCCESS: adress of element with position 'pos',
  *   ON FAILURE: NULL.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL,
- *   2. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL,
+ *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void* _gc_vector_at(const _GCVector* vector, size_t pos, gc_err* out_err);
+void* _gc_vec_at(const _GCVector* vector, size_t pos, gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
-/* Assigns specified data 'data' to element with position 'pos'.
+/* INTERNAL FUNCTION - use a vector-specific macro instead.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
- *   2. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
+ * Assigns specified data 'data' to element with position 'pos'.
+ *
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
+ *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void _gc_vector_set(_GCVector* vector, const void* data, size_t pos,
-        gc_err* out_err);
+void _gc_vec_set(_GCVector* vector, const void* data, size_t pos,
+        gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
-/* Inserts new element containing the specified data 'data' at position 'pos'.
+/* INTERNAL FUNCTION - use a vector-specific macro instead.
+ *
+ * Inserts new element containing the specified data 'data' at position 'pos'.
  * This is done by copying data pointed to by 'data' to the appropriate location
  * in the vector.
  * This causes all elements right of(including) 'pos' to shift rightward.
  * If the vector is at max capacity, it will attempt to resize(via realloc()).
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
- *   2. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds.
- *   3. GC_ERR_REALLOC_FAIL - vector attempted to realloc() for more memory
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
+ *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds.
+ *   4. GC_ERR_REALLOC_FAIL - vector attempted to realloc() for more memory
  *   and the realloc() call failed. */
 
-void _gc_vector_insert_at(_GCVector* vector, const void* data, size_t pos,
-        gc_err* out_err);
+void _gc_vec_insert(_GCVector* vector, const void* data, size_t pos,
+        gc_status* out_status);
 
-/* ----------------------------------------------------------- */
-
-/* Appends new element with data 'data' to the end of the vector.
+/* INTERNAL FUNCTION - use a vector-specific macro instead.
+ *
+ * Appends new element with data 'data' to the end of the vector.
  * This is done by copying data pointed to by 'data' to the appropriate location
  * in the vector.
  *
  * If the vector is at max capacity, it will attempt to resize(via realloc()).
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
- *   2. GC_ERR_REALLOC_FAIL - vector attempted to realloc() for more memory
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
+ *   3. GC_ERR_REALLOC_FAIL - vector attempted to realloc() for more memory
  *   and the realloc() call failed. */
 
-void _gc_vector_push_back(_GCVector* vector, const void* data, gc_err* out_err);
+void _gc_vec_push_back(_GCVector* vector, const void* data, gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
 /* Removes element with position 'pos' from the vector. This causes all elements
  * right of 'pos' to shift leftward.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL,
- *   2. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL,
+ *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void _gc_vector_remove_at(_GCVector* vector, size_t pos, gc_err* out_err);
-
-/* ----------------------------------------------------------- */
+void gc_vec_remove_at(_GCVector* vector, size_t pos, gc_status* out_status);
 
 /* Removes the last element inside the vector.
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL,
- *   2. GC_ERR_VECTOR_EMPTY - 'vector' is already empty. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL,
+ *   3. GC_ERR_VECTOR_EMPTY - 'vector' is already empty. */
 
-void _gc_vector_pop_back(_GCVector* vector, gc_err* out_err);
+void gc_vec_pop_back(_GCVector* vector, gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
 /* Attempts to re-allocate vector's 'data' field so that it can store 'capacity'
  * elements. 'capacity' argument must be greater than or equal to current's
  * vector capacity. If the re-allocation fails, an error code will be provided
  * and the vector's internal state will remain unchanged.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL OR 'capacity' < current vector cap,
- *   2. GC_ERR_REALLOC_FAIL - realloc() returned NULL. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL OR 'capacity' < current vector 
+ *   capacity,
+ *   3. GC_ERR_REALLOC_FAIL - realloc() returned NULL. */
 
-void _gc_vector_realloc(_GCVector* vector, size_t capacity, gc_err* out_err);
-
-/* ----------------------------------------------------------- */
+void gc_vec_reserve(_GCVector* vector, size_t capacity, gc_status* out_status);
 
 /* Shrinks the allocated memory for the vector's data field to match its current
  * size, minimizing unused space. This helps optimize memory usage by freeing
  * excess capacity that is no longer needed.
  *
- * ERROR CODES:
- *   1. GC_ERR_INVALID_ARG - 'vector' is NULL. */
+ * STATUS CODES:
+ *   1. GC_SUCCESS - Function call was successful,
+ *   2. GC_ERR_INVALID_ARG - 'vector' is NULL. */
 
-void _gc_vector_shrink_to_fit(_GCVector* vector, gc_err* out_err);
+void gc_vec_shrink(_GCVector* vector, gc_status* out_status);
 
-/* ----------------------------------------------------------- */
+/* ------------------------------------------------------ */
 
-/* Gets vector's element count. Assumes that 'vector' is a pointer to a valid
+/* Gets vector's element size. Assumes that 'vector' is a pointer to a valid
  * vector. */
-#define _gc_vector_count(vector) (vector)->_count
 
-/* ----------------------------------------------------------- */
+#define gc_vec_size(vector) (vector)->_base._size
+
+/* ------------------------------------------------------ */
 
 /* Gets vector's capacity. Assumes that 'vector' is a pointer to a valid
  * vector. */
-#define _gc_vector_capacity(vector) (vector)->_capacity
+
+#define gc_vec_capacity(vector) (vector)->_base._capacity
 
 /* -------------------------------------------------------------------------- */
+
+/* Below are "value array" and "pointer array" specific macros. Use these 
+ * instead of internal functions/macros defined above
+ * (they are prefixed by '_') */
+
+/* ------------------------------------------------------ */
+
+/* Value vector - stores copies of values inside the vector.
+ * 'type' argument inside some of the macros below refers to the value type
+ * stored inside the vector - if the vector stores ints, it should be 'int'. */
 
 typedef struct _GCVector GCVVector;
 
+#define gc_vec_init_val(vvector, init_cap, type, out_status) \
+    _gc_vec_init((vvector), (init_cap), sizeof((type)), (out_status))
+
+/* Returns pointer to the element inside the vector and peforms a cast to the
+ * specified type 'type'. */
+#define gc_vec_at_val(vvector, pos, out_status, type) \
+    (type *)_gc_vec_at((vvector), (pos), (out_status))
+
+#define gc_vec_set_val(vvector, data, pos, out_status) \
+    _gc_vec_set((vvector), (data), (pos), (out_status))
+
+#define gc_vec_insert_val(vvector, data, pos, out_status) \
+    _gc_vec_insert((vvector), (data), (pos), (out_status))
+
+#define gc_vec_push_back_val(vvector, data, out_status) \
+    _gc_vec_push_back((vvector), (data), (out_status))
+
 /* -------------------------------------------------------------------------- */
 
+/* Pointer vector - stores pointers inside the vector.
+ * 
+ * GCPVector provides convienent functions to help work with pointer vectors.
+ * This is important because functions like _gc_vec_push_back() expect
+ * parameter 'data' to be pointer to actual data held inside the vector.
+ * Since the vector holds pointers, this would require 'data' to be a double pointer.
+ *
+ * These macros allow the user not to worry about double pointers and just provide
+ * single pointers instead.
+ *
+ * 'type' argument inside some of the macros below refers to the value type
+ * stored inside the vector - if the vector stores int*, it should be 'int*'. */
+
 typedef struct _GCVector GCPVector;
+
+#define gc_vec_init(vec, init_cap, out_status) \
+    _gc_vec_init((vec), (init_cap), sizeof(void*), (out_status))
+
+/* Returns the address of the pointer stored in the vector, performing an
+ * appropriate cast. Since the vector stores pointers, the returned address
+ * is a double pointer. */
+#define gc_vec_at_ptr(vec, pos, out_status, type) \
+    (type *)_gc_vec_at((vec), (pos), (out_status))
+
+#define gc_vec_set(vec, data, pos, out_status) \
+    _gc_vec_set((vec), &(data), (pos), (out_status))
+
+/* 'data' refers to single pointer holding the address of some data. */
+#define gc_vec_insert_ptr(vec, data, pos, out_status) \
+    _gc_vec_insert((vec), &(data), (pos), (out_status))
+
+/* 'data' refers to single pointer holding the address of some data. */
+#define gc_vec_push_back_ptr(vec, data, out_status) \
+    _gc_vec_push_back((vec), &(data), (out_status))
 
 #endif // _GC_VECTOR_H_

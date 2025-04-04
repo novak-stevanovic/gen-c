@@ -8,6 +8,6 @@
 #define GC_ERR_INVALID_ARG 4
 #define GC_ERR_OUT_OF_BOUNDS 5
 
-typedef int gc_err;
+typedef int gc_status;
 
 #endif // _GC_SHARED_H_

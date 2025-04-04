@@ -1,4 +1,6 @@
 #include "ds/gc_array.h"
+#include "ds/gc_string.h"
+#include "ds/gc_vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -18,21 +20,17 @@ int main(int argc, char *argv[])
     Point* p3 = (Point*)malloc(sizeof(Point));
     Point* p4 = (Point*)malloc(sizeof(Point));
 
-    GCPArray arr;
-    gc_err err;
-    gc_parray_init(&arr, 1000, &err);
+    p1->x = 1;
+    p1->y = 1;
 
-    gc_parray_push_back(&arr, p1, &err);
-    gc_parray_push_back(&arr, p2, &err);
-    gc_parray_push_back(&arr, p3, &err);
-    gc_parray_push_back(&arr, p4, &err);
+    p2->x = 2;
+    p2->y = 2;
 
-    gc_parray_remove_at(&arr, 1, &err);
-    gc_parray_remove_at(&arr, 0, &err);
-    gc_parray_remove_at(&arr, 1, &err);
-    gc_parray_remove_at(&arr, 0, &err);
+    p3->x = 3;
+    p3->y = 3;
 
-    gc_parray_destroy(&arr, &err);
+    p4->x = 4;
+    p4->y = 4;
 
     printf("Done!\n");
     return EXIT_SUCCESS;

@@ -3,22 +3,24 @@
 #include "ds/_gc_array.h"
 
 void __gc_array_insert_at(_GCArray* array, size_t pos, const void* data_arr,
-        size_t count)
+        size_t data_size)
 {
-    if(count == 0) return;
+    if(data_size == 0) return;
 
     void* start_pos = __gc_array_at(array, pos);
 
-    size_t elements_shifted = array->_count - pos;
+    size_t bytes_inserted = data_size * array->_el_size;
+
+    size_t elements_shifted = array->_size - pos;
     if(elements_shifted > 0)
     {
         size_t bytes_shifted = elements_shifted * array->_el_size;
-        memmove(start_pos, start_pos + bytes_shifted, bytes_shifted);
+        memmove(start_pos + bytes_inserted, start_pos, bytes_shifted);
     }
 
-    memcpy(start_pos, data_arr, count * array->_el_size);
+    memcpy(start_pos, data_arr, bytes_inserted);
 
-    array->_count += count;
+    array->_size += data_size;
 }
 
 void __gc_array_remove_at(_GCArray* array, size_t start_pos,
@@ -27,10 +29,10 @@ void __gc_array_remove_at(_GCArray* array, size_t start_pos,
     void* _start_pos = __gc_array_at(array, start_pos);
     void* _end_pos = __gc_array_at(array, end_pos);
 
-    size_t elements_shifted = array->_count - end_pos;
+    size_t elements_shifted = array->_size - end_pos;
 
     if(elements_shifted > 0)
         memmove(_start_pos, _end_pos, elements_shifted * array->_el_size);
 
-    array->_count -= (end_pos - start_pos);
+    array->_size -= (end_pos - start_pos);
 }

@@ -37,7 +37,7 @@ typedef struct GCLock
 * the same lock results in undefined behavior. Under proper usage, this
 * error is not expected to occur. */
 
-void gc_lock_init(GCLock* lock, gc_err* out_err);
+void gc_lock_init(GCLock* lock, gc_status* out_err);
 
 /* -------------------------------------------------------------------------- */
 
@@ -52,7 +52,7 @@ void gc_lock_init(GCLock* lock, gc_err* out_err);
 * the same lock results in undefined behavior. Under proper usage, this
 * error is not expected to occur. */
 
-void gc_lock_destroy(GCLock* lock, gc_err* out_err);
+void gc_lock_destroy(GCLock* lock, gc_status* out_err);
 
 /* -------------------------------------------------------------------------- */
 
@@ -68,7 +68,7 @@ void gc_lock_destroy(GCLock* lock, gc_err* out_err);
 * the same lock results in undefined behavior. Under proper usage, this
 * error is not expected to occur. */
 
-void gc_lock_wait(GCLock* lock, gc_err* out_err);
+void gc_lock_wait(GCLock* lock, gc_status* out_err);
 
 /* -------------------------------------------------------------------------- */
 
@@ -85,7 +85,7 @@ void gc_lock_wait(GCLock* lock, gc_err* out_err);
 * the same lock results in undefined behavior. Under proper usage, this
 * error is not expected to occur. */
 
-void gc_lock_signal(GCLock* lock, gc_err* out_err);
+void gc_lock_signal(GCLock* lock, gc_status* out_err);
 
 /* -------------------------------------------------------------------------- */
 
