@@ -34,7 +34,7 @@ typedef struct _GCArray
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL, 'capacity' is 0 or 'el_size' is 0,
- *   3. GC_ERR_MALLOC_FAIL - Dynamic allocation for the array's data failed. */
+ *   3. GC_ERR_ALLOC_FAIL - Dynamic allocation for the array's data failed. */
 
 void _gc_arr_init(_GCArray* array, size_t capacity,
         size_t el_size, gc_status* out_status);
@@ -144,7 +144,7 @@ void gc_arr_pop_back(_GCArray* array, gc_status* out_status);
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL OR 'capacity' < current array cap,
- *   3. GC_ERR_REALLOC_FAIL - realloc() returned NULL. */
+ *   3. GC_ERR_ALLOC_FAIL - realloc() returned NULL. */
 
 void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status);
 

@@ -22,7 +22,7 @@ void _gc_arr_init(_GCArray* array, size_t cap,
     array->_data = malloc(cap * el_size);
     if(array->_data == NULL) 
     {
-        GC_VRETURN(out_status, GC_ERR_MALLOC_FAIL);   
+        GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);   
     }
 
     array->_size = 0;
@@ -186,7 +186,7 @@ void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status)
         void* new_data = realloc(array->_data, capacity * array->_el_size);
         if(new_data == NULL)
         {
-            GC_VRETURN(out_status, GC_ERR_REALLOC_FAIL);
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
         }
         else
         {

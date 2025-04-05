@@ -16,8 +16,8 @@ void _gc_vector_init(_GCVector* vector, size_t init_capacity,
             GC_VRETURN(out_status, GC_SUCCESS);
         case GC_ERR_INVALID_ARG:
             GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
-        case GC_ERR_MALLOC_FAIL:
-            GC_VRETURN(out_status, GC_ERR_MALLOC_FAIL);
+        case GC_ERR_ALLOC_FAIL:
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
         default:
             GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
@@ -87,8 +87,8 @@ static void __vector_expand(_GCVector* vector, gc_status* out_status)
     {
         case GC_SUCCESS:
             GC_VRETURN(out_status, GC_SUCCESS);
-        case GC_ERR_REALLOC_FAIL:
-            GC_VRETURN(out_status, GC_ERR_REALLOC_FAIL);
+        case GC_ERR_ALLOC_FAIL:
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
         default:
             GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
@@ -121,8 +121,8 @@ void _gc_vector_insert(_GCVector* vector, const void* data, size_t pos,
     {
         case GC_SUCCESS:
             break;
-        case GC_ERR_REALLOC_FAIL:
-            GC_VRETURN(out_status, GC_ERR_REALLOC_FAIL);
+        case GC_ERR_ALLOC_FAIL:
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
         default:
             GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
@@ -158,8 +158,8 @@ void _gc_vector_push_back(_GCVector* vector, const void* data, gc_status* out_st
     {
         case GC_SUCCESS:
             GC_VRETURN(out_status, GC_SUCCESS);
-        case GC_ERR_REALLOC_FAIL:
-            GC_VRETURN(out_status, GC_ERR_REALLOC_FAIL);
+        case GC_ERR_ALLOC_FAIL:
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
         default:
             GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
@@ -212,8 +212,8 @@ void gc_vector_reserve(_GCVector* vector, size_t capacity, gc_status* out_status
             GC_VRETURN(out_status, GC_SUCCESS);
         case GC_ERR_INVALID_ARG:
             GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
-        case GC_ERR_REALLOC_FAIL:
-            GC_VRETURN(out_status, GC_ERR_REALLOC_FAIL);
+        case GC_ERR_ALLOC_FAIL:
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
         default:
             GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }

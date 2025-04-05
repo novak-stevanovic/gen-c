@@ -22,7 +22,7 @@ typedef struct _GCVector
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'vector' is NULL, 'init_capacity' is 0 or 'el_size' is 0,
- *   3. GC_ERR_MALLOC_FAIL - Dynamic allocation for the vector's data failed. */
+ *   3. GC_ERR_ALLOC_FAIL - Dynamic allocation for the vector's data failed. */
 
 void _gc_vec_init(_GCVector* vector, size_t init_capacity,
         size_t el_size, gc_status* out_status);
@@ -83,7 +83,7 @@ void _gc_vec_set(_GCVector* vector, const void* data, size_t pos,
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
  *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds.
- *   4. GC_ERR_REALLOC_FAIL - vector attempted to realloc() for more memory
+ *   4. GC_ERR_ALLOC_FAIL - vector attempted to realloc() for more memory
  *   and the realloc() call failed. */
 
 void _gc_vec_insert(_GCVector* vector, const void* data, size_t pos,
@@ -100,7 +100,7 @@ void _gc_vec_insert(_GCVector* vector, const void* data, size_t pos,
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'vector' or 'data' is NULL,
- *   3. GC_ERR_REALLOC_FAIL - vector attempted to realloc() for more memory
+ *   3. GC_ERR_ALLOC_FAIL - vector attempted to realloc() for more memory
  *   and the realloc() call failed. */
 
 void _gc_vec_push_back(_GCVector* vector, const void* data, gc_status* out_status);
@@ -136,7 +136,7 @@ void gc_vec_pop_back(_GCVector* vector, gc_status* out_status);
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'vector' is NULL OR 'capacity' < current vector 
  *   capacity,
- *   3. GC_ERR_REALLOC_FAIL - realloc() returned NULL. */
+ *   3. GC_ERR_ALLOC_FAIL - realloc() returned NULL. */
 
 void gc_vec_reserve(_GCVector* vector, size_t capacity, gc_status* out_status);
 
