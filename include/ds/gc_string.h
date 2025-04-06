@@ -16,69 +16,79 @@ typedef struct GCString
 typedef struct GCStringView
 {
     const char* _data;
-    const size_t _len; // excluding \0
+    size_t _len; // excluding \0
 } GCStringView;
 
-/* Compatible type with GCString and GCStringView -> Casting allowed. */
-typedef struct GCStringLike GCStringLike;
+/* ------------------------------------------------------ */
+
+GCString gc_str(const char* content, gc_status* out_status);
+GCString gc_str_(const char* content, size_t content_len,
+        gc_status* out_status);
+
+GCString gc_str_fv(const GCStringView* view,
+        gc_status* out_status);
+
+GCString gc_str_empty();
 
 /* ------------------------------------------------------ */
 
-GCString gc_str_create(const char* content, size_t content_len,
-        gc_status* out_status);
+#define gc_str_to_sv(str_ptr) ((GCStringView) {                                \
+        ._data = (str_ptr)->_data,                                               \
+        ._len = (str_ptr)->_len                                                  \
+        })                                                                     \
 
-GCString gc_str_create_noalloc(char* content, size_t content_len,
-        gc_status* out_status);
-
-GCString gc_str_create_from_view(const GCStringView* view,
-        gc_status* out_status);
-
-GCString gc_str_create_empty();
-
-#define GC_STR_VIEW_LEN_MAX -1
-GCStringView gc_str_view_create(const GCStringLike* str, size_t offset,
-        ssize_t len, gc_status* out_status);
+#define GC_STR_SUBSTR_STR_END -1
+GCStringView gc_str_substr(const GCStringView* str, size_t start_pos,
+        ssize_t end_pos, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-void gc_str_cat(GCString* str1, const GCStringLike* str2,
+void gc_str_cat(GCString* str1, const GCStringView* str2,
         gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-void gc_str_cpy(GCString* dest, const GCStringLike* src, gc_status* out_status);
+void gc_str_cpy(GCString* dest, const GCStringView* src, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
 #define GC_STR_FIND_NOT_FOUND -1
 #define GC_STR_FIND_START_POS_DEFAULT -1
 
-struct GCStringFindResult
+struct GCStringFindObject
 {
     ssize_t str_pos;
     ssize_t needle_idx;
 };
 
-struct GCStringFindResult gc_str_find(const GCStringLike* haystack,
-        size_t haystack_start_pos, 
-        GCStringLike* needles, size_t needle_count,
+struct GCStringFindObject gc_str_find(const GCStringView* haystack,
+        GCStringView needles[], size_t needle_count,
         bool case_sensitive, gc_status* out_status);
 
-struct GCStringFindResult gc_str_rfind(const GCStringLike* haystack,
-        size_t haystack_start_pos, 
-        GCStringLike* needles, size_t needle_count,
+struct GCStringFindObject gc_str_rfind(const GCStringView* haystack,
+        GCStringView needles[], size_t needle_count,
+        bool case_sensitive, gc_status* out_status);
+
+struct GCStringFindAllObject
+{
+    struct GCStringFindObject* find_objects;
+    size_t count;
+};
+
+struct GCStringFindAllObject gc_str_find_all(const GCStringView* haystack,
+        GCStringView needles[], size_t needle_count,
         bool case_sensitive, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-struct GCStringSeparateResult
+struct GCStringSepObject
 {
     GCStringView* views;
     size_t count;
 };
 
-struct GCStringSeparateResult gc_str_sep(const GCStringLike* str,
-        size_t start_pos, GCStringLike* separators, size_t separator_count,
+struct GCStringSepObject gc_str_sep(const GCStringView* str,
+        GCStringView sep[], size_t sep_count,
         bool case_sensitive, gc_status* out_status);
 
 /* ------------------------------------------------------ */
@@ -89,7 +99,7 @@ typedef int gc_str_diff;
 #define GC_STR_DIFF_STR2_LONGER -300
 #define GC_STR_DIFF_EQUAL 0
 
-gc_str_diff gc_str_cmp(const GCStringLike* str1, const GCStringLike* str2,
+gc_str_diff gc_str_cmp(const GCStringView* str1, const GCStringView* str2,
         bool case_sensitive, gc_status* out_status);
 
 /* ------------------------------------------------------ */

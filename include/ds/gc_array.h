@@ -160,17 +160,24 @@ void gc_arr_fit(_GCArray* array, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-/* Gets array's size. Assumes that 'array' is a pointer to a valid
- * array. */
+/* Gets array's size.
+ * Assumes that 'array' is a pointer to a valid array. */
 
-#define gc_arr_size(array)->_size
+size_t gc_arr_size(_GCArray* array);
 
 /* ------------------------------------------------------ */
 
-/* Gets array's capacity. Assumes that 'array' is a pointer to a valid
- * array. */
+/* Gets array's capacity.
+ * Assumes that 'array' is a pointer to a valid array. */
 
-#define gc_arr_capacity(array) (array)->_capacity
+size_t gc_arr_capacity(_GCArray* array);
+
+/* ------------------------------------------------------ */
+
+/* Gets array's data field.
+ * Assumes that 'array' is a pointer to a valid array. */
+
+void* _gc_arr_data(_GCArray* array);
 
 /* -------------------------------------------------------------------------- */
 

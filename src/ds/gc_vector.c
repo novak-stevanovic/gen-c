@@ -4,7 +4,7 @@
 
 #define EXPAND_FACTOR 2.0
 
-void _gc_vector_init(_GCVector* vector, size_t init_capacity,
+void _gc_vec_init(_GCVector* vector, size_t init_capacity,
         size_t el_size, gc_status* out_status)
 {
     gc_status _status;
@@ -23,7 +23,7 @@ void _gc_vector_init(_GCVector* vector, size_t init_capacity,
     }
 }
 
-void gc_vector_destroy(_GCVector* vector, gc_status* out_status)
+void gc_vec_destroy(_GCVector* vector, gc_status* out_status)
 {
     gc_status _status;
     gc_arr_destroy((_GCArray*)vector, &_status);
@@ -39,7 +39,7 @@ void gc_vector_destroy(_GCVector* vector, gc_status* out_status)
     }
 }
 
-void* _gc_vector_at(const _GCVector* vector, size_t pos, gc_status* out_status)
+void* _gc_vec_at(const _GCVector* vector, size_t pos, gc_status* out_status)
 {
     gc_status _status;
     void* addr = _gc_arr_at((const _GCArray*)vector, pos, &_status);
@@ -57,7 +57,7 @@ void* _gc_vector_at(const _GCVector* vector, size_t pos, gc_status* out_status)
     }
 }
 
-void _gc_vector_set(_GCVector* vector, const void* data, size_t pos,
+void _gc_vec_set(_GCVector* vector, const void* data, size_t pos,
         gc_status* out_status)
 {
     gc_status _status;
@@ -76,7 +76,7 @@ void _gc_vector_set(_GCVector* vector, const void* data, size_t pos,
     }
 }
 
-static void __vector_expand(_GCVector* vector, gc_status* out_status)
+static void __vec_expand(_GCVector* vector, gc_status* out_status)
 {
     _GCArray* _vector = (_GCArray*)vector;
 
@@ -95,7 +95,7 @@ static void __vector_expand(_GCVector* vector, gc_status* out_status)
     
 }
 
-void _gc_vector_insert(_GCVector* vector, const void* data, size_t pos,
+void _gc_vec_insert(_GCVector* vector, const void* data, size_t pos,
         gc_status* out_status)
 {
     _GCArray* _vector = (_GCArray*)vector;
@@ -115,7 +115,7 @@ void _gc_vector_insert(_GCVector* vector, const void* data, size_t pos,
             break;
     }
 
-    __vector_expand(vector, &_status);
+    __vec_expand(vector, &_status);
 
     switch(_status)
     {
@@ -138,7 +138,7 @@ void _gc_vector_insert(_GCVector* vector, const void* data, size_t pos,
     }
 }
 
-void _gc_vector_push_back(_GCVector* vector, const void* data, gc_status* out_status)
+void _gc_vec_push_back(_GCVector* vector, const void* data, gc_status* out_status)
 {
     if(vector == NULL)
     {
@@ -152,7 +152,7 @@ void _gc_vector_push_back(_GCVector* vector, const void* data, gc_status* out_st
     _GCArray* _vector = (_GCArray*)vector;
 
     gc_status _status;
-    _gc_vector_insert(vector, data, _vector->_size, &_status);
+    _gc_vec_insert(vector, data, _vector->_size, &_status);
 
     switch(_status)
     {
@@ -165,7 +165,7 @@ void _gc_vector_push_back(_GCVector* vector, const void* data, gc_status* out_st
     }
 }
 
-void gc_vector_remove(_GCVector* vector, size_t pos, gc_status* out_status)
+void gc_vec_remove(_GCVector* vector, size_t pos, gc_status* out_status)
 {
     gc_status _status;
     gc_arr_remove((_GCArray*)vector, pos, &_status);
@@ -183,7 +183,7 @@ void gc_vector_remove(_GCVector* vector, size_t pos, gc_status* out_status)
     }
 }
 
-void gc_vector_pop_back(_GCVector* vector, gc_status* out_status)
+void gc_vec_pop_back(_GCVector* vector, gc_status* out_status)
 {
     gc_status _status;
     gc_arr_pop_back((_GCArray*)vector, &_status); 
@@ -201,7 +201,7 @@ void gc_vector_pop_back(_GCVector* vector, gc_status* out_status)
     }
 }
 
-void gc_vector_reserve(_GCVector* vector, size_t capacity, gc_status* out_status)
+void gc_vec_reserve(_GCVector* vector, size_t capacity, gc_status* out_status)
 {
     gc_status _status;
     gc_arr_reserve((_GCArray*)vector, capacity, &_status);
@@ -219,7 +219,7 @@ void gc_vector_reserve(_GCVector* vector, size_t capacity, gc_status* out_status
     }
 }
 
-void gc_vector_fit(_GCVector* vector, gc_status* out_status)
+void gc_vec_fit(_GCVector* vector, gc_status* out_status)
 {
     gc_status _status;
     gc_arr_fit((_GCArray*)vector, &_status);
@@ -233,4 +233,19 @@ void gc_vector_fit(_GCVector* vector, gc_status* out_status)
         default:
             GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
+}
+
+size_t gc_vec_size(_GCVector* vector)
+{
+    return (vector != NULL) ? gc_arr_size((_GCArray*)vector) : 0;
+}
+
+size_t gc_vec_capacity(_GCVector* vector)
+{
+    return (vector != NULL) ? gc_arr_capacity((_GCArray*)vector) : 0;
+}
+
+void* _gc_vec_data(_GCVector* vector)
+{
+    return (vector != NULL) ? _gc_arr_data((_GCArray*)vector) : NULL;
 }

@@ -152,17 +152,24 @@ void gc_vec_fit(_GCVector* vector, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-/* Gets vector's element size. Assumes that 'vector' is a pointer to a valid
- * vector. */
+/* Gets vector's size.
+ * Assumes that 'vector' is a pointer to a valid vector. */
 
-#define gc_vec_size(vector) (vector)->_base._size
+size_t gc_vec_size(_GCVector* vector);
 
 /* ------------------------------------------------------ */
 
-/* Gets vector's capacity. Assumes that 'vector' is a pointer to a valid
- * vector. */
+/* Gets vector's capacity.
+ * Assumes that 'vector' is a pointer to a valid vector. */
 
-#define gc_vec_capacity(vector) (vector)->_base._capacity
+size_t gc_vec_capacity(_GCVector* vector);
+
+/* ------------------------------------------------------ */
+
+/* Gets vector's data field.
+ * Assumes that 'vector' is a pointer to a valid vector. */
+
+void* _gc_vec_data(_GCVector* vector);
 
 /* -------------------------------------------------------------------------- */
 
@@ -179,7 +186,7 @@ void gc_vec_fit(_GCVector* vector, gc_status* out_status);
 typedef struct _GCVector GCVVector;
 
 #define gc_vec_init_val(vvector, init_cap, type, out_status) \
-    _gc_vec_init((vvector), (init_cap), sizeof((type)), (out_status))
+    _gc_vec_init((vvector), (init_cap), sizeof(type), (out_status))
 
 /* Returns pointer to the element inside the vector and peforms a cast to the
  * specified type 'type'. */
@@ -212,7 +219,7 @@ typedef struct _GCVector GCVVector;
 
 typedef struct _GCVector GCPVector;
 
-#define gc_vec_init(vec, init_cap, out_status) \
+#define gc_vec_init_ptr(vec, init_cap, out_status) \
     _gc_vec_init((vec), (init_cap), sizeof(void*), (out_status))
 
 /* Returns the address of the pointer stored in the vector, performing an
@@ -221,7 +228,7 @@ typedef struct _GCVector GCPVector;
 #define gc_vec_at_ptr(vec, pos, out_status, type) \
     (type *)_gc_vec_at((vec), (pos), (out_status))
 
-#define gc_vec_set(vec, data, pos, out_status) \
+#define gc_vec_set_ptr(vec, data, pos, out_status) \
     _gc_vec_set((vec), &(data), (pos), (out_status))
 
 /* 'data' refers to single pointer holding the address of some data. */

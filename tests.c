@@ -15,23 +15,24 @@ typedef struct Point
 
 int main(int argc, char *argv[])
 {
-    Point* p1 = (Point*)malloc(sizeof(Point));
-    Point* p2 = (Point*)malloc(sizeof(Point));
-    Point* p3 = (Point*)malloc(sizeof(Point));
-    Point* p4 = (Point*)malloc(sizeof(Point));
+    gc_status _status;
 
-    p1->x = 1;
-    p1->y = 1;
+    GCString s = gc_str("NOVAK_EMILIJA", NULL);
+    GCString s2 = gc_str("_NOVAK", NULL);
 
-    p2->x = 2;
-    p2->y = 2;
+    gc_str_cat(&s, &gc_str_to_sv(&s2), &_status);
+    assert(_status == 0);
 
-    p3->x = 3;
-    p3->y = 3;
+    GCString n = gc_str("_", NULL);
 
-    p4->x = 4;
-    p4->y = 4;
+    GCStringView v[10];
+    v[0] = gc_str_to_sv(&s);
+    v[1] = gc_str_to_sv(&n);
 
-    printf("Done!\n");
+    struct GCStringFindObject obj = gc_str_rfind((GCStringView*)&s,
+            v, 2, true, &_status);
+
+    printf("%zu\n", obj.str_pos);
+
     return EXIT_SUCCESS;
 }

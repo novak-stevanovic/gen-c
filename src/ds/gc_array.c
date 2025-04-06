@@ -213,3 +213,18 @@ void gc_arr_fit(_GCArray* array, gc_status* out_status)
 
     array->_capacity = array->_size;
 }
+
+size_t gc_arr_size(_GCArray* array)
+{
+    return (array != NULL) ? array->_size : 0;
+}
+
+size_t gc_arr_capacity(_GCArray* array)
+{
+    return (array != NULL) ? array->_capacity : 0;
+}
+
+void* _gc_arr_data(_GCArray* array)
+{
+    return (array != NULL) ? array->_data : NULL;
+}
