@@ -15,24 +15,21 @@ typedef struct Point
 
 int main(int argc, char *argv[])
 {
-    gc_status _status;
+    GCString_ s = gc_str_("Novak");
 
-    GCString s = gc_str("NOVAK_EMILIJA", NULL);
-    GCString s2 = gc_str("_NOVAK", NULL);
+    GCString e = gc_str("Emilija", NULL);
+    //
+    size_t i;
+    for(i = 0; i < 2; i++)
+        gc_str_cat(e, gc_sv(s), NULL);
 
-    gc_str_cat(&s, &gc_str_to_sv(&s2), &_status);
-    assert(_status == 0);
+    printf("%s\n", e->data);
 
-    GCString n = gc_str("_", NULL);
+    struct GCStringFindAllObject obj = gc_str_find_all(gc_sv(e), &gc_sv(s), 1, true, NULL);
+    for(i = 0; i < obj.count; i++)
+    {
+        printf("i: %d | %d\n", i, obj.find_objects[i].str_pos);
+    }
 
-    GCStringView v[10];
-    v[0] = gc_str_to_sv(&s);
-    v[1] = gc_str_to_sv(&n);
-
-    struct GCStringFindObject obj = gc_str_rfind((GCStringView*)&s,
-            v, 2, true, &_status);
-
-    printf("%zu\n", obj.str_pos);
-
-    return EXIT_SUCCESS;
+    return 0;
 }
