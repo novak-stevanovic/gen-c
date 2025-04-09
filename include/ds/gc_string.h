@@ -7,58 +7,40 @@
 #include <stdbool.h>
 #include <string.h>
 
-typedef struct _GCString
-{
-    char* data;
-    size_t len;
-    size_t capacity;
-} _GCString;
+typedef struct _GCString* GCString;
 
-typedef _GCString* GCString;
+char* gc_str_data(GCString str);
+size_t gc_str_len(GCString str);
+size_t gc_str_capacity(GCString str);
 
-/* GC Static String - Statically allocated 'data' */
-typedef struct _GCString_
-{
-    char* data;
-    size_t len;
-} _GCString_;
-
-typedef _GCString_* GCString_;
+/* GCStringView ----------------------------------------- */
 
 typedef struct GCStringView
 {
-    const char* data;
-    size_t len;
+    const char* _data;
+    size_t _len;
 } GCStringView;
 
-/* ------------------------------------------------------ */
+const char* gc_sv_data(GCStringView sv);
+size_t gc_sv_len(GCStringView sv);
 
-GCString gc_str(const char* content, gc_status* out_status);
-GCString gc_strl(const char* content, size_t len, gc_status* out_status);
+GCStringView gc_sv(GCString str);
+GCStringView gc_sv_cpy(GCStringView sv);
 
-#define gc_str_(str)                                                           \
-    &((_GCString_) {                                                           \
-        .data = str,                                                           \
-        .len = strlen(str)                                                     \
-    })                                                                         \
+/* GCString creation ------------------------------------ */
 
-#define gc_strl_(str, len)                                                     \
-    &((_GCString_) {                                                           \
-        .data = str,                                                           \
-        .len = len                                                             \
-    })                                                                         \
+GCString gc_str_create(const char* content, gc_status* out_status);
+
+GCString gc_str_create_(const char* content, size_t len, gc_status* out_status);
+
+GCString gc_str_from_sv(GCStringView sv);
 
 void gc_str_destroy(GCString str, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-#define gc_sv(str) ((GCStringView) {                                           \
-        .data = (str)->data,                                                   \
-        .len = (str)->len                                                      \
-    })                                                                         \
-
 #define GC_STR_SUBSTR_STR_END -1
-GCStringView gc_str_substr(GCStringView str, size_t start_pos,
+const GCStringView gc_str_substr(GCStringView str, size_t start_pos,
         ssize_t end_pos, gc_status* out_status);
 
 /* ------------------------------------------------------ */
@@ -103,6 +85,8 @@ struct GCStringFindAllObject
 {
     struct GCStringFindObject* find_objects;
     size_t count;
+
+    void* __vec;
 };
 
 struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,

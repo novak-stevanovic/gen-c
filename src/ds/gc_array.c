@@ -3,55 +3,49 @@
 #include "_gc_shared.h"
 #include <string.h>
 
-void _gc_arr_init(_GCArray* array, size_t cap,
-        size_t el_size, gc_status* out_status)
+_GCArray _gc_arr_create(size_t capacity, size_t el_size, gc_status* out_status)
 {
-    if(array == NULL) 
+    if((capacity == 0) || (el_size == 0))
     {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);   
-    }
-    if(cap == 0) 
-    {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);   
-    }
-    if(el_size == 0) 
-    {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);   
+        GC_RETURN(NULL, out_status, GC_ERR_INVALID_ARG);
     }
 
-    array->_data = malloc(cap * el_size);
-    if(array->_data == NULL) 
+    _GCArray arr = (_GCArray)malloc(sizeof(struct __GCArray));
+
+    if(arr == NULL)
     {
-        GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);   
+        GC_RETURN(NULL, out_status, GC_ERR_ALLOC_FAIL);
     }
 
-    array->_size = 0;
-    array->_el_size = el_size;
-    array->_capacity = cap;
+    gc_status _status;
+    __gc_arr_init(arr, capacity, el_size, &_status);
+
+    switch(_status)
+    {
+        case GC_SUCCESS:
+            GC_RETURN(arr, out_status, GC_SUCCESS);
+        case GC_ERR_ALLOC_FAIL:
+            free(arr);
+            GC_RETURN(NULL, out_status, GC_ERR_ALLOC_FAIL);
+        default:
+            free(arr);
+            GC_RETURN(NULL, out_status, GC_ERR_UNHANDLED);
+    }
+}
+
+void gc_arr_destroy(_GCArray array, gc_status* out_status)
+{
+    if(array == NULL)
+    {
+        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
+    }
+
+    __gc_arr_destroy(array);
 
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void gc_arr_destroy(_GCArray* array, gc_status* out_status)
-{
-    if(array == NULL) 
-    {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);   
-    }
-
-    if(array->_data != NULL)
-    {
-        free(array->_data);
-        array->_data = NULL;
-    }
-    array->_capacity = 0;
-    array->_size = 0;
-    array->_el_size = 0;
-
-    GC_VRETURN(out_status, GC_SUCCESS);
-}
-
-void* _gc_arr_at(const _GCArray* array, size_t pos, gc_status* out_status)
+void* _gc_arr_at(const _GCArray array, size_t pos, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -66,7 +60,7 @@ void* _gc_arr_at(const _GCArray* array, size_t pos, gc_status* out_status)
     GC_RETURN(addr, out_status, GC_SUCCESS);
 }
 
-void _gc_arr_set(_GCArray* array, const void* data, size_t pos,
+void _gc_arr_set(_GCArray array, const void* data, size_t pos,
         gc_status* out_status)
 {
     if(array == NULL) 
@@ -89,7 +83,7 @@ void _gc_arr_set(_GCArray* array, const void* data, size_t pos,
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void _gc_arr_insert(_GCArray* array, const void* data, size_t pos,
+void _gc_arr_insert(_GCArray array, const void* data, size_t pos,
         gc_status* out_status)
 {
     if(array == NULL) 
@@ -115,7 +109,7 @@ void _gc_arr_insert(_GCArray* array, const void* data, size_t pos,
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void _gc_arr_push_back(_GCArray* array, const void* data, gc_status* out_status)
+void _gc_arr_push_back(_GCArray array, const void* data, gc_status* out_status)
 {
     _gc_arr_insert(array, data, array->_size, out_status);
 
@@ -137,7 +131,7 @@ void _gc_arr_push_back(_GCArray* array, const void* data, gc_status* out_status)
     }
 }
 
-void gc_arr_remove(_GCArray* array, size_t pos, gc_status* out_status)
+void gc_arr_remove(_GCArray array, size_t pos, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -153,7 +147,7 @@ void gc_arr_remove(_GCArray* array, size_t pos, gc_status* out_status)
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void gc_arr_pop_back(_GCArray* array, gc_status* out_status)
+void gc_arr_pop_back(_GCArray array, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -167,7 +161,7 @@ void gc_arr_pop_back(_GCArray* array, gc_status* out_status)
     array->_size--;
 }
 
-void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status)
+void gc_arr_reserve(_GCArray array, size_t capacity, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -197,7 +191,7 @@ void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status)
     }
 }
 
-void gc_arr_fit(_GCArray* array, gc_status* out_status)
+void gc_arr_fit(_GCArray array, gc_status* out_status)
 {
     if(array == NULL) 
     {
@@ -214,17 +208,17 @@ void gc_arr_fit(_GCArray* array, gc_status* out_status)
     array->_capacity = array->_size;
 }
 
-size_t gc_arr_size(_GCArray* array)
+size_t gc_arr_size(const _GCArray array)
 {
     return (array != NULL) ? array->_size : 0;
 }
 
-size_t gc_arr_capacity(_GCArray* array)
+size_t gc_arr_capacity(const _GCArray array)
 {
     return (array != NULL) ? array->_capacity : 0;
 }
 
-void* _gc_arr_data(_GCArray* array)
+void* _gc_arr_data(const _GCArray array)
 {
     return (array != NULL) ? array->_data : NULL;
 }

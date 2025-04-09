@@ -3,8 +3,6 @@
 
 #include "gc_shared.h"
 
-#define GC_ERR_LOCK_CAP_REACHED 101
-
 /* GCLock is a simple, thread-safe synchronization mechanism that functions
  * similarly to a mutex, although it offers fewer features.
  *

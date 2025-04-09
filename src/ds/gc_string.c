@@ -10,12 +10,19 @@
 
 #define _STR_END(str) (str->data + str->len)
 
+struct _GCString
+{
+    char* data;
+    size_t len;
+    size_t capacity;
+};
+
 /* -------------------------------------------------------------------------- */
 
 #define _EXPAND_SUCCESS 0
 #define _EXPAND_ALLOC_FAIL 1
 
-static const _GCString _STR_EMPTY = {0};
+static const GCString _STR_EMPTY = {0};
 
 static int _expand_string(GCString str, size_t len_needed)
 {
@@ -68,7 +75,49 @@ static gc_str_diff _str_cmp(const char* str1, size_t str1_len,
 
 /* -------------------------------------------------------------------------- */
 
-GCString gc_str(const char* content, gc_status* out_status)
+const char* gc_sv_data(GCStringView sv)
+{
+    return sv._data;
+}
+size_t gc_sv_len(GCStringView sv)
+{
+    return sv._len;
+}
+
+GCStringView gc_sv(GCString str)
+{
+    return (GCStringView) {
+        ._data = (const char*)str->data,
+        ._len = str->len
+    };
+
+}
+GCStringView gc_sv_cpy(GCStringView sv)
+{
+    GCStringView cpy = sv;
+    return cpy;
+}
+
+/* -------------------------------------------------------------------------- */
+
+char* gc_str_data(GCString str)
+{
+    return (str != NULL) ? str->data : NULL;
+}
+
+size_t gc_str_len(GCString str)
+{
+    return (str != NULL) ? str->len : 0;
+}
+
+size_t gc_str_capacity(GCString str)
+{
+    return (str != NULL) ? str->capacity : 0;
+}
+
+/* ------------------------------------------------------ */
+
+GCString gc_str_create(const char* content, gc_status* out_status)
 {
     if(content == NULL)
     {
@@ -77,7 +126,7 @@ GCString gc_str(const char* content, gc_status* out_status)
 
     gc_status _status;
     size_t len = strlen(content);
-    GCString str = gc_strl(content, len, &_status);
+    GCString str = gc_str_create_(content, len, &_status);
 
     switch(_status)
     {
@@ -89,7 +138,7 @@ GCString gc_str(const char* content, gc_status* out_status)
             GC_RETURN(NULL, out_status, GC_ERR_UNHANDLED);
     }
 }
-GCString gc_strl(const char* content, size_t len,
+GCString gc_str_create_(const char* content, size_t len,
         gc_status* out_status)
 {
     // TODO
@@ -98,7 +147,7 @@ GCString gc_strl(const char* content, size_t len,
         GC_RETURN(NULL, out_status, GC_SUCCESS);
     }
 
-    GCString str = (GCString)malloc(sizeof(GCString));
+    GCString str = (GCString)malloc(sizeof(struct _GCString));
     if(str == NULL)
     {
         GC_RETURN(NULL, out_status, GC_ERR_ALLOC_FAIL);
@@ -122,6 +171,11 @@ GCString gc_strl(const char* content, size_t len,
     GC_RETURN(str, out_status, GC_SUCCESS);
 }
 
+GCString gc_str_from_sv(GCStringView sv)
+{
+    return gc_str_create_(sv._data, sv._len, NULL); 
+}
+
 void gc_str_destroy(GCString str, gc_status* out_status)
 {
     if(str == NULL)
@@ -139,21 +193,21 @@ void gc_str_destroy(GCString str, gc_status* out_status)
 
 static const GCStringView _STR_VIEW_EMPTY = {0};
 
-GCStringView gc_str_substr(GCStringView str, size_t start_pos,
+const GCStringView gc_str_substr(GCStringView str, size_t start_pos,
         ssize_t end_pos, gc_status* out_status)
 {
     if(end_pos == GC_STR_SUBSTR_STR_END)
-        end_pos = str.len;
+        end_pos = str._len;
 
-    if((start_pos > end_pos) || (start_pos >= str.len) ||
-            (end_pos > str.len))
+    if((start_pos > end_pos) || (start_pos >= str._len) ||
+            (end_pos > str._len))
     {
         GC_RETURN(_STR_VIEW_EMPTY, out_status, GC_ERR_INVALID_ARG);
     }
 
     GCStringView view = {
-        .data = str.data + start_pos,
-        .len = end_pos - start_pos
+        ._data = str._data + start_pos,
+        ._len = end_pos - start_pos
     };
     
     GC_RETURN(view, out_status, GC_ERR_INVALID_ARG);
@@ -168,7 +222,7 @@ void gc_str_cat(GCString str1, GCStringView str2,
     {
         GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
-    if(str2.len == 0)
+    if(str2._len == 0)
     {
         GC_VRETURN(out_status, GC_SUCCESS);
     }
@@ -177,7 +231,7 @@ void gc_str_cat(GCString str1, GCStringView str2,
 
     // Allocate more memory if needed
 
-    size_t total_len_needed = str1->len + str2.len;
+    size_t total_len_needed = str1->len + str2._len;
     size_t available_len = str1->capacity;
 
     if(total_len_needed > available_len)
@@ -199,9 +253,9 @@ void gc_str_cat(GCString str1, GCStringView str2,
 
     // Move the actual contents of str2 to the end of str1
 
-    memmove(_STR_END(str1), str2.data, str2.len);
+    memmove(_STR_END(str1), str2._data, str2._len);
 
-    str1->len += str2.len;
+    str1->len += str2._len;
 
     str1->data[str1->len] = '\0';
 
@@ -221,7 +275,7 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
 
     // Allocate more memory if needed
 
-    size_t dest_mem_needed = src.len;
+    size_t dest_mem_needed = src._len;
 
     if(dest_mem_needed >= dest->len)
     {
@@ -242,9 +296,9 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
 
     // Move contents of src string to the beginning of dest string
 
-    memmove(dest->data, src.data, src.len);
+    memmove(dest->data, src._data, src._len);
 
-    dest->len = src.len;
+    dest->len = src._len;
 
     dest->data[dest->len] = '\0';
 }
@@ -264,20 +318,20 @@ struct GCStringFindObject _str_find(GCStringView haystack,
     gc_str_diff it_diff;
 
     ssize_t i, j;
-    for(i = 0; i < haystack.len; i++)
+    for(i = 0; i < haystack._len; i++)
     {
-        it_str = haystack.data + i;
+        it_str = haystack._data + i;
         for(j = 0; j < needle_count; j++) // loop through the needles
         {
             // If the needle has no length, it is not valid
-            if(needles[j].len == 0) continue;
+            if(needles[j]._len == 0) continue;
 
             // Out of bounds - can't be found
-            if(i + needles[j].len > haystack.len) continue;
+            if(i + needles[j]._len > haystack._len) continue;
 
             // Compare the strings, naively
-            it_diff = _str_cmp(it_str, needles[j].len,
-                    needles[j].data, needles[j].len,
+            it_diff = _str_cmp(it_str, needles[j]._len,
+                    needles[j]._data, needles[j]._len,
                     case_sensitive);
 
             // Found - return
@@ -304,7 +358,7 @@ struct GCStringFindObject gc_str_find(GCStringView haystack,
     {
         GC_RETURN(_STR_FIND_OBJ_EMPTY, out_status, GC_ERR_INVALID_ARG);
     }
-    if(haystack.len == 0)
+    if(haystack._len == 0)
     {
         GC_RETURN(_STR_FIND_OBJ_EMPTY, out_status, GC_SUCCESS);
     }
@@ -324,23 +378,23 @@ static struct GCStringFindObject _str_rfind(GCStringView haystack,
     const char* it_str;
     gc_str_diff it_diff;
 
-    for(i = haystack.len - 1; i >= 0; i--)
+    for(i = haystack._len - 1; i >= 0; i--)
     {
         for(j = 0; j < needle_count; j++)
         {
             // If the needle has no length, it is not valid
-            if(needles[j].len == 0) continue;
+            if(needles[j]._len == 0) continue;
 
             // Determine start of it_str - if the condition is not met,
             // it is out of bounds for haystack
-            it_str = ((i + needles[j].len) <= haystack.len) ?
-                (haystack.data + i) : NULL;
+            it_str = ((i + needles[j]._len) <= haystack._len) ?
+                (haystack._data + i) : NULL;
 
             if(it_str == NULL) continue;
 
             // Compare the strings, naively
-            it_diff = _str_cmp(it_str, needles[j].len,
-                    needles[j].data, needles[j].len,
+            it_diff = _str_cmp(it_str, needles[j]._len,
+                    needles[j]._data, needles[j]._len,
                     case_sensitive);
 
             // Found - return
@@ -365,7 +419,7 @@ struct GCStringFindObject gc_str_rfind(GCStringView haystack,
     {
         GC_RETURN(_STR_FIND_OBJ_EMPTY, out_status, GC_ERR_INVALID_ARG);
     }
-    if(haystack.len == 0)
+    if(haystack._len == 0)
     {
         GC_RETURN(_STR_FIND_OBJ_EMPTY, out_status, GC_SUCCESS);
     }
@@ -394,7 +448,7 @@ struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,
     {
         GC_RETURN(_STR_FIND_ALL_OBJ_EMPTY, out_status, GC_ERR_INVALID_ARG);
     }
-    if(haystack.len == 0)
+    if(haystack._len == 0)
     {
         GC_RETURN(_STR_FIND_ALL_OBJ_EMPTY, out_status, GC_SUCCESS);
     }
@@ -403,8 +457,7 @@ struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,
 
     // We don't know how many matches we're going to get - we use a vector
 
-    GCVVector vec;
-    gc_vec_init_val(&vec, 10, struct GCStringFindObject, &_status);
+    GCVVector vec = gc_vec_create_val(10, struct GCStringFindObject, &_status);
     if(_status == GC_ERR_ALLOC_FAIL)
     {
         GC_RETURN(_STR_FIND_ALL_OBJ_EMPTY, out_status, GC_ERR_ALLOC_FAIL);
@@ -416,8 +469,8 @@ struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,
         // Current part of string that we're examining
         // At the 0th iteration, it is the whole string
         GCStringView it_sv = {
-            .data = haystack.data + offset,
-            .len = haystack.len - offset
+            ._data = haystack._data + offset,
+            ._len = haystack._len - offset
         };
 
         // Find result inside the current part of the string
@@ -435,10 +488,10 @@ struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,
         find_res.str_pos += offset;
 
         // Add the result to the vector
-        gc_vec_push_back_val(&vec, &find_res, &_status);
+        gc_vec_push_back_val(vec, &find_res, &_status);
         if(_status == GC_ERR_ALLOC_FAIL) // handle vector realloc failure
         {
-            gc_vec_destroy(&vec, &_status);
+            gc_vec_destroy(vec, &_status);
             GC_RETURN(_STR_FIND_ALL_OBJ_EMPTY, out_status, GC_ERR_ALLOC_FAIL);
         }
 
@@ -447,16 +500,19 @@ struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,
         offset = find_res.str_pos + 1;
     }
 
-    if(gc_vec_size(&vec) == 0)
+    if(gc_vec_size(vec) == 0)
     {
-        gc_vec_destroy(&vec, &_status);
+        gc_vec_destroy(vec, &_status);
         GC_RETURN(_STR_FIND_ALL_OBJ_EMPTY, out_status, GC_SUCCESS);
     }
     else
     {
+        gc_vec_fit(vec, &_status);
+
         struct GCStringFindAllObject ret = {
-            .find_objects = _gc_vec_data(&vec),
-            .count = gc_vec_size(&vec)
+            .find_objects = _gc_vec_data(vec),
+            .count = gc_vec_size(vec),
+            .__vec = vec
         };
 
         GC_RETURN(ret, out_status, GC_SUCCESS);
@@ -471,6 +527,9 @@ void gc_str_find_all_obj_destroy(struct GCStringFindAllObject* find_all_obj)
         free(find_all_obj->find_objects);
 
     find_all_obj->count = 0;
+
+    if(find_all_obj->__vec != NULL)
+        gc_vec_destroy((_GCVector)find_all_obj->__vec, NULL);
 }
 
 
@@ -542,34 +601,34 @@ struct GCStringSepObject gc_str_sep(GCStringView str,
         if(i == 0)
         {
             svs[0] = (GCStringView) {
-                .data = str.data,
-                .len = find_all_res.find_objects[0].str_pos
+                ._data = str._data,
+                ._len = find_all_res.find_objects[0].str_pos
             };
         }
         else if(i == find_all_res.count)
         {
             size_t final_seg_start_offset =
                 find_all_res.find_objects[i - 1].str_pos +
-                sep[find_all_res.find_objects[i - 1].needle_idx].len;
+                sep[find_all_res.find_objects[i - 1].needle_idx]._len;
 
             svs[find_all_res.count] = (GCStringView) {
-                .data = str.data + final_seg_start_offset,
-                .len = str.len - final_seg_start_offset
+                ._data = str._data + final_seg_start_offset,
+                ._len = str._len - final_seg_start_offset
             };
         }
         else
         {
             size_t curr_seg_start_offset = 
                 find_all_res.find_objects[i - 1].str_pos +
-                sep[find_all_res.find_objects[i - 1].needle_idx].len;
+                sep[find_all_res.find_objects[i - 1].needle_idx]._len;
 
             size_t curr_seg_len =
                 find_all_res.find_objects[i].str_pos -
                 curr_seg_start_offset;
 
             svs[i] = (GCStringView) {
-                .data = str.data + curr_seg_start_offset,
-                    .len = curr_seg_len
+                ._data = str._data + curr_seg_start_offset,
+                    ._len = curr_seg_len
             };
         }
     }
@@ -595,8 +654,8 @@ void gc_str_sep_obj_destroy(struct GCStringSepObject* sep_obj)
 gc_str_diff gc_str_cmp(GCStringView str1, GCStringView str2,
         bool case_sensitive, gc_status* out_status)
 {
-    return _str_cmp(str1.data, str1.len,
-            str2.data, str2.len,
+    return _str_cmp(str1._data, str1._len,
+            str2._data, str2._len,
             case_sensitive);
 }
 
@@ -648,7 +707,7 @@ void gc_str_fit(GCString str, gc_status* out_status)
     }
 
     gc_status _status;
-    gc_str_reserve(str, str->len + 1, &_status);
+    gc_str_reserve(str, str->len, &_status);
 
     switch(_status)
     {

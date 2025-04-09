@@ -4,40 +4,45 @@
 #include "gc_shared.h"
 #include <stdlib.h>
 
-#define GC_ERR_ARRAY_NO_CAP 201
-#define GC_ERR_ARRAY_EMPTY 202
+typedef struct __GCArray* _GCArray;
 
-typedef struct _GCArray
-{
-    /* size - the array currently has this many elements */
-    size_t _size;
+/* Getters ---------------------------------------------- */
 
-    /* capacity - the array has enough memory allocated to store this many
-     * elements */
-    size_t _capacity;
+/* Gets array's size.
+ * Assumes that 'array' is a pointer to a valid array. */
 
-    /* data - pointer to dynamically allocated chunk of memory reserved for
-     * array's elements */
-    void* _data;
-    
-    /* el_size - size of single element(bytes) */
-    size_t _el_size;
-} _GCArray;
+size_t gc_arr_size(const _GCArray array);
+
+/* Gets array's capacity.
+ * Assumes that 'array' is a pointer to a valid array. */
+
+size_t gc_arr_capacity(const _GCArray array);
+
+/* INTERNAL FUNCTION - use a convenience macro instead.
+ *
+ * Gets array's data field.
+ * Assumes that 'array' is a pointer to a valid array. */
+
+void* _gc_arr_data(const _GCArray array);
 
 /* ------------------------------------------------------ */
 
-/* INTERNAL FUNCTION - use an array-specific macro instead.
+/* INTERNAL FUNCTION - use a convenience macro instead.
  *
- * Initializes the array with specified values. Dynamically allocates enough
- * memory to store 'capacity' elements.
+ * Dynamically allocates memory for the struct __GCArray. Initializes
+ * the struct with provided values. Dynamically allocates enough memory
+ * to store 'capacity' elements inside the array. Returns the opaque pointer.
+ *
+ * RETURN VALUES:
+ *   ON SUCCESS: Address of dynamically allocated _GCArray,
+ *   ON FAILURE: NULL.
  *
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
- *   2. GC_ERR_INVALID_ARG - 'array' is NULL, 'capacity' is 0 or 'el_size' is 0,
- *   3. GC_ERR_ALLOC_FAIL - Dynamic allocation for the array's data failed. */
+ *   2. GC_ERR_ALLOC_FAIL - Dynamic allocation failed,
+ *   3. GC_ERR_INVALID_ARG - provided 'el_size' or 'capacity' is equal to 0. */
 
-void _gc_arr_init(_GCArray* array, size_t capacity,
-        size_t el_size, gc_status* out_status);
+_GCArray _gc_arr_create(size_t capacity, size_t el_size, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
@@ -48,11 +53,11 @@ void _gc_arr_init(_GCArray* array, size_t capacity,
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL. */
 
-void gc_arr_destroy(_GCArray* array, gc_status* out_status);
+void gc_arr_destroy(_GCArray array, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-/* INTERNAL FUNCTION - use an array-specific macro instead.
+/* INTERNAL FUNCTION - use a convenience macro instead.
  *
  * Returns address of element with position 'pos' inside the array.
  *
@@ -65,11 +70,11 @@ void gc_arr_destroy(_GCArray* array, gc_status* out_status);
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL,
  *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void* _gc_arr_at(const _GCArray* array, size_t pos, gc_status* out_status);
+void* _gc_arr_at(const _GCArray array, size_t pos, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-/* INTERNAL FUNCTION - use an array-specific macro instead.
+/* INTERNAL FUNCTION - use a convenience macro instead.
  *
  * Assigns specified data 'data' to element with position 'pos'.
  *
@@ -78,12 +83,12 @@ void* _gc_arr_at(const _GCArray* array, size_t pos, gc_status* out_status);
  *   2. GC_ERR_INVALID_ARG - 'array' or 'data' is NULL,
  *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void _gc_arr_set(_GCArray* array, const void* data, size_t pos,
+void _gc_arr_set(_GCArray array, const void* data, size_t pos,
         gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
-/* INTERNAL FUNCTION - use an array-specific macro instead.
+/* INTERNAL FUNCTION - use a convenience macro instead.
  *
  * Inserts new element containing the specified data 'data' at position 'pos'.
  * This is done by copying data pointed to by 'data' to the appropriate location
@@ -97,10 +102,10 @@ void _gc_arr_set(_GCArray* array, const void* data, size_t pos,
  *   4. GC_ERR_ARRAY_NO_CAP - 'array' doesn't have enough capacity to insert
  *   new elements. */
 
-void _gc_arr_insert(_GCArray* array, const void* data, size_t pos,
+void _gc_arr_insert(_GCArray array, const void* data, size_t pos,
         gc_status* out_status);
 
-/* INTERNAL FUNCTION - use an array-specific macro instead.
+/* INTERNAL FUNCTION - use a convenience macro instead.
  *
  * Appends new element with data 'data' to the end of the array.
  * This is done by copying data pointed to by 'data' to the appropriate location
@@ -112,7 +117,7 @@ void _gc_arr_insert(_GCArray* array, const void* data, size_t pos,
  *   3. GC_ERR_ARRAY_NO_CAP - 'array' doesn't have enough capacity to append
  *   new elements. */
 
-void _gc_arr_push_back(_GCArray* array, const void* data, gc_status* out_status);
+void _gc_arr_push_back(_GCArray array, const void* data, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
@@ -124,7 +129,7 @@ void _gc_arr_push_back(_GCArray* array, const void* data, gc_status* out_status)
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL,
  *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void gc_arr_remove(_GCArray* array, size_t pos, gc_status* out_status);
+void gc_arr_remove(_GCArray array, size_t pos, gc_status* out_status);
 
 /* Removes the last element inside the array.
  * STATUS CODES:
@@ -132,7 +137,7 @@ void gc_arr_remove(_GCArray* array, size_t pos, gc_status* out_status);
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL,
  *   3. GC_ERR_ARRAY_EMPTY - 'array' is already empty. */
 
-void gc_arr_pop_back(_GCArray* array, gc_status* out_status);
+void gc_arr_pop_back(_GCArray array, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
@@ -146,7 +151,7 @@ void gc_arr_pop_back(_GCArray* array, gc_status* out_status);
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL OR 'capacity' < current array cap,
  *   3. GC_ERR_ALLOC_FAIL - realloc() returned NULL. */
 
-void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status);
+void gc_arr_reserve(_GCArray array, size_t capacity, gc_status* out_status);
 
 /* Shrinks the allocated memory for the array's data field to match its current
  * size, minimizing unused space. This helps optimize memory usage by freeing
@@ -156,30 +161,12 @@ void gc_arr_reserve(_GCArray* array, size_t capacity, gc_status* out_status);
  *   1. GC_SUCCESS - Function call was successful,
  *   2. GC_ERR_INVALID_ARG - 'array' is NULL. */
 
-void gc_arr_fit(_GCArray* array, gc_status* out_status);
+void gc_arr_fit(_GCArray array, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* CONVENIENCE MACROS ------------------------------------------------------- */
 
-/* Gets array's size.
- * Assumes that 'array' is a pointer to a valid array. */
-
-size_t gc_arr_size(_GCArray* array);
-
-/* ------------------------------------------------------ */
-
-/* Gets array's capacity.
- * Assumes that 'array' is a pointer to a valid array. */
-
-size_t gc_arr_capacity(_GCArray* array);
-
-/* ------------------------------------------------------ */
-
-/* Gets array's data field.
- * Assumes that 'array' is a pointer to a valid array. */
-
-void* _gc_arr_data(_GCArray* array);
-
-/* -------------------------------------------------------------------------- */
+/* 'type' refers to the data type stored inside the array */
+#define gc_arr_data(arr, type) (type *)_gc_arr_data(arr)
 
 /* Below are "value array" and "pointer array" specific macros. Use these 
  * instead of internal functions/macros defined above
@@ -191,10 +178,10 @@ void* _gc_arr_data(_GCArray* array);
  * 'type' argument inside some of the macros below refers to the value type
  * stored inside the array - if the array stores ints, it should be 'int'. */
 
-typedef struct _GCArray GCVArray;
+typedef _GCArray GCVArray;
 
-#define gc_arr_init_val(valarr, init_cap, type, out_status) \
-    _gc_array_init((valarr), (init_cap), sizeof((type)), (out_status))
+#define gc_arr_create_val(init_cap, type, out_status) \
+    _gc_array_create((init_cap), sizeof(type), (out_status))
 
 /* Returns pointer to the element inside the array and casts the pointer to
  * type*. If _gc_arr_at() fails, the result may be NULL. */
@@ -225,17 +212,19 @@ typedef struct _GCArray GCVArray;
  * 'type' argument inside some of the macros below refers to the value type
  * stored inside the array - if the array stores int*, it should be 'int*'. */
 
-typedef struct _GCArray GCPArray;
+typedef _GCArray GCPArray;
 
-#define gc_arr_init_ptr(ptrarr, init_cap, out_status) \
-    _gc_array_init((ptrarr), (init_cap), sizeof(void*), (out_status))
+#define gc_arr_create_ptr(init_cap, out_status) \
+    _gc_array_create((init_cap), sizeof(void*), (out_status))
 
-/* Returns the address of the pointer stored in the array, performing an
- * appropriate cast. Since the array stores pointers, the returned address
- * is a double pointer. */
+/* Finds the address of element inside the array with position 'pos'.
+ * This is a double pointer, because the element itself is a pointer.
+ * It casts this double pointer to the appropriate type. Then, the
+ * double pointer is dereferenced so that a single pointer is returned. */
 #define gc_arr_at_ptr(ptrarr, pos, out_status, type) \
-    (type *)_gc_array_at((ptrarr), (pos), (out_status))
+    *(type **)_gc_array_at((ptrarr), (pos), (out_status))
 
+/* 'data' refers to single pointer holding the address of some data. */
 #define gc_arr_set_ptr(ptrarr, data, pos, out_status) \
     _gc_array_set((ptrarr), &(data), (pos), (out_status))
 
