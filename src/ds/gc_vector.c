@@ -42,6 +42,8 @@ void gc_vec_destroy(_GCVector vector, gc_status* out_status)
     }
 
     __gc_vec_destroy(vector);
+    
+    free(vector);
 }
 
 void* _gc_vec_at(const _GCVector vector, size_t pos, gc_status* out_status)

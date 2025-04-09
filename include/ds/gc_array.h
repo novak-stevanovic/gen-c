@@ -47,7 +47,7 @@ _GCArray _gc_arr_create(size_t capacity, size_t el_size, gc_status* out_status);
 /* ------------------------------------------------------ */
 
 /* Destroys the array. Sets its fields to default values. Frees the dynamically
- * allocated memory for array's data field.
+ * allocated memory for the array and the array's data field.
  *
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
@@ -165,7 +165,7 @@ void gc_arr_fit(_GCArray array, gc_status* out_status);
 
 /* CONVENIENCE MACROS ------------------------------------------------------- */
 
-/* 'type' refers to the data type stored inside the array */
+/* 'type' refers to the data type stored inside the array. */
 #define gc_arr_data(arr, type) (type *)_gc_arr_data(arr)
 
 /* Below are "value array" and "pointer array" specific macros. Use these 

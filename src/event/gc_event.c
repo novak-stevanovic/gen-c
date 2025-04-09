@@ -1,181 +1,70 @@
 #include <stdbool.h>
 #include "event/gc_event.h"
 #include "_gc_shared.h"
+#include "ds/gc_vector.h"
 #include "gc_shared.h"
 #include <assert.h>
 #include <stdlib.h>
 
-struct GCEventSubListNode
+struct _GCEvent
 {
-    struct GCEventSubscription subscription;
-    struct GCEventSubListNode* next;
+    gc_etype type;
+    GCEventParticipant source;
+    GCPVector subscribers;
 };
 
-typedef struct GCEventSubList
+/* Function assumes correct arguments */
+static void __event_init(GCEvent event, GCEventParticipant source,
+        gc_etype type, gc_status* out_status)
 {
-    struct GCEventSubListNode* head;
-    struct GCEventSubListNode* tail;
+    event->type = type;
+    event->source = source;
 
-    size_t count;
-} GCEventSubList;
+    gc_status _status;
+    event->subscribers = gc_vec_create_val(10, struct GCEventSubscription, &_status);
 
-typedef struct _GCEvent 
-{
-    gc_etype _type;
-
-    GCEventParticipant _source;
-    GCEventSubList _subscriptions;
-} _GCEvent;
-
-/* -------------------------------------------------------------------------- */
-
-struct GCEventSubListNode* _event_subscription_node_alloc(
-        struct GCEventSubscription subscription)
-{
-    struct GCEventSubListNode* new = (struct GCEventSubListNode*)
-        malloc(sizeof(struct GCEventSubListNode));
-
-    if(new == NULL) return NULL;
-
-    new->subscription = subscription;
-    new->next = NULL;
-
-    return new;
-}
-
-static void _event_sub_list_init(GCEventSubList* list)
-{
-    if(list == NULL) return;
-
-    list->head = NULL;
-    list->tail = NULL;
-    list->count = 0;
-}
-
-static void _event_sub_list_pop_front(GCEventSubList* list)
-{
-    if(list->count == 0) return;
-
-    struct GCEventSubListNode* old_head = list->head;
-    list->head = list->head->next;
-    free(old_head);
-
-    list->count--;
-
-    if(list->count == 0)
-        list->tail = NULL;
-}
-
-static void _event_sub_list_destroy(GCEventSubList* list)
-{
-    if(list == NULL) return;
-
-    while(list->count > 0)
-        _event_sub_list_pop_front(list);
-
-    list->head = NULL;
-    list->tail = NULL;
-    list->count = 0;
-}
-
-static bool _event_sub_list_is_subbed(GCEventSubList* list,
-        const GCEventParticipant subscriber)
-{
-    struct GCEventSubListNode* it;
-    for(it = list->head; it != NULL; it = it->next)
+    switch(_status)
     {
-        if(it->subscription.subscriber == subscriber)
-            return true;
-    }
-
-    return false;
-}
-
-static void _event_sub_list_add_sub(GCEventSubList* list,
-        const struct GCEventSubscription subscription, gc_status* out_status)
-{
-    if(list == NULL) return;
-
-    if(_event_sub_list_is_subbed(list, subscription.subscriber))
-    {
-        GC_VRETURN(out_status, GC_ERR_EVENT_ALR_SUB);
-    }
-
-    struct GCEventSubListNode* new =
-        _event_subscription_node_alloc(subscription);
-
-    if(new == NULL)
-    {
-        GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
-    }
-
-    if(list->tail != NULL) // add to tail
-        list->tail->next = new;
-    else // add head
-        list->head = new;
-
-    list->count++;
-
-    GC_VRETURN(out_status, GC_SUCCESS);
-}
-
-static void _event_sub_list_remove_sub(GCEventSubList* list,
-        const GCEventParticipant subscriber, gc_status* out_status)
-{
-    if(list == NULL) return;
-    if(list->count == 0) return;
-
-    if(list->head->subscription.subscriber == subscriber)
-    {
-        _event_sub_list_pop_front(list);
-        return;
-    }
-
-    struct GCEventSubListNode* it;
-    struct GCEventSubListNode* prev = NULL;
-    for(it = list->head; it != NULL; prev = it, it = it->next)
-    {
-        if(it->subscription.subscriber == subscriber)
-        {
-            prev->next = it->next;
-
-            if(list->tail == it)
-                list->tail = prev;
-
-            free(it);
-
-            list->count--;
-
+        case GC_SUCCESS:
             GC_VRETURN(out_status, GC_SUCCESS);
-        }
+        case GC_ERR_ALLOC_FAIL:
+            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
+        default:
+            GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
-
-    GC_VRETURN(out_status, GC_ERR_EVENT_NOT_SUB);
 }
 
 /* -------------------------------------------------------------------------- */
 
-GCEvent gc_event_create(GCEventParticipant source,
-        gc_etype event_type, gc_status* out_status)
+GCEvent gc_event_create(GCEventParticipant source, gc_etype type,
+        gc_status* out_status)
 {
+    GCEvent event = (GCEvent)malloc(sizeof(struct _GCEvent));
+
     if(source == NULL)
     {
         GC_RETURN(NULL, out_status, GC_ERR_INVALID_ARG);
     }
-
-    GCEvent event = (GCEvent)malloc(sizeof(struct _GCEvent));
+    
     if(event == NULL)
     {
         GC_RETURN(NULL, out_status, GC_ERR_ALLOC_FAIL);
     }
 
-    event->_type = event_type;
+    gc_status _status;
+    __event_init(event, source, type, &_status);
 
-    event->_source = source;
-
-    _event_sub_list_init(&event->_subscriptions);
-
-    GC_RETURN(event, out_status, GC_SUCCESS);
+    switch(_status)
+    {
+        case GC_SUCCESS:
+            GC_RETURN(event, out_status, GC_SUCCESS);
+        case GC_ERR_ALLOC_FAIL:
+            free(event);
+            GC_RETURN(NULL, out_status, GC_ERR_ALLOC_FAIL);
+        default:
+            free(event);
+            GC_RETURN(NULL, out_status, GC_ERR_UNHANDLED);
+    }
 }
 
 void gc_event_destroy(GCEvent event, gc_status* out_status)
@@ -185,17 +74,34 @@ void gc_event_destroy(GCEvent event, gc_status* out_status)
         GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
 
-    event->_source = NULL;
-    _event_sub_list_destroy(&event->_subscriptions);
+    if(event->subscribers != NULL)
+        gc_vec_destroy(event->subscribers, NULL);
+
+    event->source = NULL;
+    event->type = GC_EVENT_TYPE_DEFAULT;
+
+    free(event);
 
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-void gc_event_subscribe(GCEvent event, const struct
-        GCEventSubscription subscription, gc_status* out_status)
+/* ------------------------------------------------------ */
+
+void gc_event_subscribe(GCEvent event, struct GCEventSubscription subscription,
+        gc_status* out_status)
 {
+    if((event == NULL) || (subscription.subscriber == NULL) ||
+            (subscription.event_handler == NULL))
+    {
+        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
+    }
+    if(gc_event_is_subscribed(event, subscription.subscriber))
+    {
+        GC_VRETURN(out_status, GC_ERR_EVENT_ALR_SUB);
+    }
+
     gc_status _status;
-    _event_sub_list_add_sub(&event->_subscriptions, subscription, &_status);
+    gc_vec_push_back_val(event->subscribers, &subscription, &_status);
 
     switch(_status)
     {
@@ -203,46 +109,93 @@ void gc_event_subscribe(GCEvent event, const struct
             GC_VRETURN(out_status, GC_SUCCESS);
         case GC_ERR_ALLOC_FAIL:
             GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
-        case GC_ERR_EVENT_ALR_SUB:
-            GC_VRETURN(out_status, GC_ERR_EVENT_ALR_SUB);
+        default:
+            GC_VRETURN(out_status, GC_ERR_UNHANDLED);
     }
 }
 
 void gc_event_unsubscribe(GCEvent event, GCEventParticipant subscriber,
         gc_status* out_status)
 {
-    gc_status _status;
-
-    _event_sub_list_remove_sub(&event->_subscriptions, subscriber, &_status);
-
-    switch(_status)
+    if((event == NULL) || (subscriber == NULL))
     {
-        case GC_SUCCESS:
-            GC_VRETURN(out_status, GC_SUCCESS);
-        case GC_ERR_ALLOC_FAIL:
-            GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
-        case GC_ERR_EVENT_ALR_SUB:
-            GC_VRETURN(out_status, GC_ERR_EVENT_ALR_SUB);
+        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
+
+    GCVVector subs = event->subscribers;
+    size_t i;
+
+    struct GCEventSubscription curr_sub;
+    for(i = 0; i < gc_vec_size(subs); i++)
+    {
+        curr_sub = *gc_vec_at_val(subs, i, NULL, struct GCEventSubscription);
+
+        if(curr_sub.subscriber == subscriber)
+        {
+            gc_status _status;
+            gc_vec_remove(subs, i, &_status);
+
+            switch(_status)
+            {
+                case GC_SUCCESS:
+                    GC_VRETURN(out_status, GC_SUCCESS);
+                default:
+                    GC_VRETURN(out_status, GC_ERR_UNHANDLED);
+            }
+        }
+    }
+
+    GC_VRETURN(out_status, GC_ERR_EVENT_NOT_SUB);
 }
 
-void gc_event_raise(GCEvent event, void* context,
-        gc_status* out_status)
+/* ------------------------------------------------------ */
+
+void gc_event_raise(GCEvent event, void* data, gc_status* out_status)
 {
-    struct GCEventSubListNode* it;
-    for(it = event->_subscriptions.head; it != NULL; it = it->next)
+    if(event == NULL)
     {
-        it->subscription.event_handler(it->subscription.subscriber,
-                event, context);
+        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
+
+    size_t i;
+    struct GCEventSubscription curr_sub;
+    for(i = 0; i < gc_vec_size(event->subscribers); i++)
+    {
+        curr_sub = *gc_vec_at_val(event->subscribers, i, NULL,
+                struct GCEventSubscription);
+
+        curr_sub.event_handler(curr_sub.subscriber, event, data);
+    }
+
+    GC_VRETURN(out_status, GC_SUCCESS);
+}
+
+/* ------------------------------------------------------ */
+
+bool gc_event_is_subscribed(GCEvent event, GCEventParticipant subscriber)
+{
+    if(event == NULL) return false;
+    if(subscriber == NULL) return false;
+
+    size_t i;
+    GCVVector subs = event->subscribers;
+    struct GCEventSubscription curr_sub;
+    for(i = 0; i < gc_vec_size(subs); i++)
+    {
+        curr_sub = *gc_vec_at_val(subs, i, NULL, struct GCEventSubscription);
+        if(curr_sub.subscriber == subscriber)
+            return true;
+    }
+
+    return false;
 }
 
 GCEventParticipant gc_event_source(const GCEvent event)
 {
-    return event->_source;
+    return event->source;
 }
 
 gc_etype gc_event_type(const GCEvent event)
 {
-    return event->_type;
+    return event->type;
 }

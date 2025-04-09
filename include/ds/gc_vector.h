@@ -45,7 +45,7 @@ _GCVector _gc_vec_create(size_t capacity, size_t el_size, gc_status* out_status)
 /* ------------------------------------------------------ */
 
 /* Destroys the vector. Sets its fields to default values. Frees the dynamically
- * allocated memory for vector's data field.
+ * allocated memory for the vector and the vector's data field.
  *
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
@@ -130,7 +130,7 @@ void _gc_vec_push_back(_GCVector vector, const void* data, gc_status* out_status
  *   2. GC_ERR_INVALID_ARG - 'vector' is NULL,
  *   3. GC_ERR_OUT_OF_BOUNDS - 'pos' is out of bounds. */
 
-void gc_vec_remove_at(_GCVector vector, size_t pos, gc_status* out_status);
+void gc_vec_remove(_GCVector vector, size_t pos, gc_status* out_status);
 
 /* Removes the last element inside the vector.
  * STATUS CODES:

@@ -42,6 +42,8 @@ void gc_arr_destroy(_GCArray array, gc_status* out_status)
 
     __gc_arr_destroy(array);
 
+    free(array);
+
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
