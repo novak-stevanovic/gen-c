@@ -40,6 +40,7 @@ static void _expand_string(GCString str, size_t new_capacity,
     {
         str->data = new_data;
         str->capacity = new_capacity;
+        GC_VRETURN(out_status, GC_SUCCESS);
     }
     else
     {
