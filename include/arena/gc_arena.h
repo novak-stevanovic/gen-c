@@ -10,7 +10,7 @@
  * into a region list. When the tail of the region list runs out of memory in
  * its internal memory pool, a new region is pushed back to the list.
  *
- * The GCArena may also be rewinded, which will empty all of the allocated
+ * It is possible to rewind the GCArena, which will empty all of the allocated
  * regions (and their internal memory pools), allowing the user to
  * re-populate the once-used memory pools.
  *

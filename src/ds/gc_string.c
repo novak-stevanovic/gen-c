@@ -22,55 +22,48 @@ struct _GCString
 #define _EXPAND_SUCCESS 0
 #define _EXPAND_ALLOC_FAIL 1
 
-static const GCString _STR_EMPTY = {0};
-
-static int _expand_string(GCString str, size_t len_needed)
+static void _expand_string(GCString str, size_t new_capacity,
+        gc_status* out_status)
 {
-    size_t new_capacity = len_needed * _CAPACITY_FACTOR;
-
-    void* new_data;
-    if(str->data != NULL) // empty str
-        new_data = realloc(str->data, new_capacity + 1);
-    else
-        new_data = malloc(new_capacity + 1);
-
-    if(new_data == NULL)
+    if((str == NULL) || (str->len > new_capacity))
     {
-        return 1;
+        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
-    else
+    if(str->len == new_capacity)
+    {
+        GC_VRETURN(out_status, GC_SUCCESS);
+    }
+
+    void* new_data = realloc(str->data, new_capacity + 1);
+
+    if(new_data != NULL)
     {
         str->data = new_data;
         str->capacity = new_capacity;
-        return 0;
-    }
-}
-
-static gc_str_diff _str_cmp(const char* str1, size_t str1_len,
-        const char* str2, size_t str2_len,
-        bool case_sensitive)
-{
-    if(str1_len > str2_len)
-    {
-        return GC_STR_DIFF_STR1_LONGER;
-    }
-    else if(str2_len > str1_len)
-    {
-        return GC_STR_DIFF_STR2_LONGER;
     }
     else
     {
-        size_t i;
-        char c1, c2;
-        for(i = 0; i < str1_len; i++)
-        {
-            c1 = (!case_sensitive ? gc_str_get_lowercase_letter(str1[i]) : str1[i]);
-            c2 = (!case_sensitive ? gc_str_get_lowercase_letter(str2[i]) : str2[i]);
-            if(c1 != c2)
-                return (c2 - c1);
-        }
-        return GC_STR_DIFF_EQUAL;
+        GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
     }
+}
+
+static const GCString _STR_EMPTY = {0};
+
+/* -------------------------------------------------------------------------- */
+
+char* gc_str_data(GCString str)
+{
+    return (str != NULL) ? str->data : NULL;
+}
+
+size_t gc_str_len(GCString str)
+{
+    return (str != NULL) ? str->len : 0;
+}
+
+size_t gc_str_capacity(GCString str)
+{
+    return (str != NULL) ? str->capacity : 0;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -92,40 +85,14 @@ GCStringView gc_sv(GCString str)
     };
 
 }
-GCStringView gc_sv_cpy(GCStringView sv)
-{
-    GCStringView cpy = sv;
-    return cpy;
-}
 
 /* -------------------------------------------------------------------------- */
 
-char* gc_str_data(GCString str)
-{
-    return (str != NULL) ? str->data : NULL;
-}
-
-size_t gc_str_len(GCString str)
-{
-    return (str != NULL) ? str->len : 0;
-}
-
-size_t gc_str_capacity(GCString str)
-{
-    return (str != NULL) ? str->capacity : 0;
-}
-
-/* ------------------------------------------------------ */
-
 GCString gc_str_create(const char* content, gc_status* out_status)
 {
-    if(content == NULL)
-    {
-        GC_RETURN(NULL, out_status, GC_SUCCESS);
-    }
-
     gc_status _status;
     size_t len = strlen(content);
+
     GCString str = gc_str_create_(content, len, &_status);
 
     switch(_status)
@@ -141,12 +108,6 @@ GCString gc_str_create(const char* content, gc_status* out_status)
 GCString gc_str_create_(const char* content, size_t len,
         gc_status* out_status)
 {
-    // TODO
-    if((content == NULL) || (len == 0))
-    {
-        GC_RETURN(NULL, out_status, GC_SUCCESS);
-    }
-
     GCString str = (GCString)malloc(sizeof(struct _GCString));
     if(str == NULL)
     {
@@ -160,7 +121,8 @@ GCString gc_str_create_(const char* content, size_t len,
         GC_RETURN(NULL, out_status, GC_ERR_ALLOC_FAIL);
     }
 
-    memcpy(str_data, content, len);
+    if(content != NULL)
+        memcpy(str_data, content, len);
 
     str->data = str_data;
     str->len = len;
@@ -187,13 +149,15 @@ void gc_str_destroy(GCString str, gc_status* out_status)
     str->capacity = 0;
     str->len = 0;
     free(str);
+
+    GC_VRETURN(out_status, GC_SUCCESS);
 }
 
 /* -------------------------------------------------------------------------- */
 
 static const GCStringView _STR_VIEW_EMPTY = {0};
 
-const GCStringView gc_str_substr(GCStringView str, size_t start_pos,
+GCStringView gc_str_substr(GCStringView str, size_t start_pos,
         ssize_t end_pos, gc_status* out_status)
 {
     if(end_pos == GC_STR_SUBSTR_STR_END)
@@ -210,13 +174,12 @@ const GCStringView gc_str_substr(GCStringView str, size_t start_pos,
         ._len = end_pos - start_pos
     };
     
-    GC_RETURN(view, out_status, GC_ERR_INVALID_ARG);
+    GC_RETURN(view, out_status, GC_SUCCESS);
 }
 
 /* -------------------------------------------------------------------------- */
 
-void gc_str_cat(GCString str1, GCStringView str2,
-        gc_status* out_status)
+void gc_str_cat(GCString str1, GCStringView str2, gc_status* out_status)
 {
     if(str1 == NULL)
     {
@@ -236,9 +199,11 @@ void gc_str_cat(GCString str1, GCStringView str2,
 
     if(total_len_needed > available_len)
     {
-        int expand_status = _expand_string(str1, total_len_needed);
+        gc_status _status;
 
-        switch(expand_status)
+        _expand_string(str1, total_len_needed * _CAPACITY_FACTOR, &_status);
+
+        switch(_status)
         {
             case _EXPAND_SUCCESS:
                 break;
@@ -270,6 +235,11 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
     {
         GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
+    if(src._len == 0)
+    {
+        dest->len = 0;
+        GC_VRETURN(out_status, GC_SUCCESS);
+    }
 
     /* ------------------------------------------------------ */
 
@@ -277,11 +247,12 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
 
     size_t dest_mem_needed = src._len;
 
-    if(dest_mem_needed >= dest->len)
+    if(dest_mem_needed >= dest->capacity)
     {
-        int expand_status = _expand_string(dest, dest_mem_needed);
+        gc_status _status;
+        _expand_string(dest, dest_mem_needed, &_status);
 
-        switch(expand_status)
+        switch(_status)
         {
             case _EXPAND_SUCCESS:
                 break;
@@ -301,6 +272,47 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
     dest->len = src._len;
 
     dest->data[dest->len] = '\0';
+
+    GC_VRETURN(out_status, GC_SUCCESS);
+}
+
+/* -------------------------------------------------------------------------- */
+
+// TODO - switch from char*? add checks for len?
+static gc_str_diff _str_cmp(const char* str1, size_t str1_len,
+        const char* str2, size_t str2_len,
+        bool case_sensitive)
+{
+    if(str1_len > str2_len)
+    {
+        return GC_STR_DIFF_STR1_LONGER;
+    }
+    else if(str2_len > str1_len)
+    {
+        return GC_STR_DIFF_STR2_LONGER;
+    }
+    else
+    {
+        size_t i;
+        char c1, c2;
+        for(i = 0; i < str1_len; i++)
+        {
+            c1 = (!case_sensitive ? gc_str_lowerc(str1[i]) : str1[i]);
+            c2 = (!case_sensitive ? gc_str_lowerc(str2[i]) : str2[i]);
+            if(c1 != c2)
+                return (c2 - c1);
+        }
+        return GC_STR_DIFF_EQUAL;
+    }
+}
+
+
+gc_str_diff gc_str_cmp(GCStringView str1, GCStringView str2,
+        bool case_sensitive)
+{
+    return _str_cmp(str1._data, str1._len,
+            str2._data, str2._len,
+            case_sensitive);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -649,15 +661,6 @@ void gc_str_sep_obj_destroy(struct GCStringSepObject* sep_obj)
     sep_obj->count = 0;
 }
 
-/* -------------------------------------------------------------------------- */
-
-gc_str_diff gc_str_cmp(GCStringView str1, GCStringView str2,
-        bool case_sensitive, gc_status* out_status)
-{
-    return _str_cmp(str1._data, str1._len,
-            str2._data, str2._len,
-            case_sensitive);
-}
 
 /* -------------------------------------------------------------------------- */
 
@@ -672,13 +675,7 @@ void gc_str_reserve(GCString str, size_t capacity, gc_status* out_status)
         GC_VRETURN(out_status, GC_SUCCESS);
     }
 
-    void* new_data;
-    if(str->data == NULL) // empty str
-        new_data = malloc(capacity + 1);
-    else
-    {
-        new_data = realloc(str->data, capacity + 1);
-    }
+    void* new_data = realloc(str->data, capacity + 1);
 
     if(new_data == NULL)
     {
@@ -699,13 +696,6 @@ void gc_str_fit(GCString str, gc_status* out_status)
         GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
     }
 
-    if(str->data == NULL) // empty str
-    {
-        str->capacity = 0;
-        str->len = 0;
-        GC_VRETURN(out_status, GC_SUCCESS);
-    }
-
     gc_status _status;
     gc_str_reserve(str, str->len, &_status);
 
@@ -722,28 +712,22 @@ void gc_str_fit(GCString str, gc_status* out_status)
 
 /* -------------------------------------------------------------------------- */
 
-void gc_str_to_upper(GCString str, gc_status* out_status)
+void gc_str_to_upper(GCString str)
 {
-    if(str == NULL)
-    {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
-    }
+    if(str == NULL) return;
 
     size_t i;
     for(i = 0; i < str->len; i++)
-        str->data[i] = gc_str_get_uppercase_letter(str->data[i]);
+        str->data[i] = gc_str_upperc(str->data[i]);
 }
 
-void gc_str_to_lower(GCString str, gc_status* out_status)
+void gc_str_to_lower(GCString str)
 {
-    if(str == NULL)
-    {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
-    }
+    if(str == NULL) return;
 
     size_t i;
     for(i = 0; i < str->len; i++)
-        str->data[i] = gc_str_get_lowercase_letter(str->data[i]);
+        str->data[i] = gc_str_lowerc(str->data[i]);
 }
 
 /* -------------------------------------------------------------------------- */

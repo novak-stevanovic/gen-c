@@ -4,19 +4,25 @@
 #include "gc_shared.h"
 #include <stdlib.h>
 
+/* -------------------------------------------------------------------------- */
+
 typedef struct __GCArray* _GCArray;
 
-/* Getters ---------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
 /* Gets array's size.
  * Assumes that 'array' is a pointer to a valid array. */
 
 size_t gc_arr_size(const _GCArray array);
 
+/* ------------------------------------------------------ */
+
 /* Gets array's capacity.
  * Assumes that 'array' is a pointer to a valid array. */
 
 size_t gc_arr_capacity(const _GCArray array);
+
+/* ------------------------------------------------------ */
 
 /* INTERNAL FUNCTION - use a convenience macro instead.
  *
@@ -25,7 +31,7 @@ size_t gc_arr_capacity(const _GCArray array);
 
 void* _gc_arr_data(const _GCArray array);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* INTERNAL FUNCTION - use a convenience macro instead.
  *
@@ -55,7 +61,7 @@ _GCArray _gc_arr_create(size_t capacity, size_t el_size, gc_status* out_status);
 
 void gc_arr_destroy(_GCArray array, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* INTERNAL FUNCTION - use a convenience macro instead.
  *
@@ -86,7 +92,7 @@ void* _gc_arr_at(const _GCArray array, size_t pos, gc_status* out_status);
 void _gc_arr_set(_GCArray array, const void* data, size_t pos,
         gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* INTERNAL FUNCTION - use a convenience macro instead.
  *
@@ -105,6 +111,8 @@ void _gc_arr_set(_GCArray array, const void* data, size_t pos,
 void _gc_arr_insert(_GCArray array, const void* data, size_t pos,
         gc_status* out_status);
 
+/* ------------------------------------------------------ */
+
 /* INTERNAL FUNCTION - use a convenience macro instead.
  *
  * Appends new element with data 'data' to the end of the array.
@@ -119,7 +127,7 @@ void _gc_arr_insert(_GCArray array, const void* data, size_t pos,
 
 void _gc_arr_push_back(_GCArray array, const void* data, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* Removes element with position 'pos' from the array. This causes all elements
  * right of 'pos' to shift leftward.
@@ -131,6 +139,8 @@ void _gc_arr_push_back(_GCArray array, const void* data, gc_status* out_status);
 
 void gc_arr_remove(_GCArray array, size_t pos, gc_status* out_status);
 
+/* ------------------------------------------------------ */
+
 /* Removes the last element inside the array.
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
@@ -139,7 +149,7 @@ void gc_arr_remove(_GCArray array, size_t pos, gc_status* out_status);
 
 void gc_arr_pop_back(_GCArray array, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* Attempts to re-allocate array's 'data' field so that it can store 'capacity'
  * elements. 'capacity' argument must be greater than or equal to current's
@@ -152,6 +162,8 @@ void gc_arr_pop_back(_GCArray array, gc_status* out_status);
  *   3. GC_ERR_ALLOC_FAIL - realloc() returned NULL. */
 
 void gc_arr_reserve(_GCArray array, size_t capacity, gc_status* out_status);
+
+/* ------------------------------------------------------ */
 
 /* Shrinks the allocated memory for the array's data field to match its current
  * size, minimizing unused space. This helps optimize memory usage by freeing

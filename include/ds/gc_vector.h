@@ -4,26 +4,32 @@
 #include <stdlib.h>
 #include "gc_shared.h"
 
+/* ------------------------------------------------------------------------- */ 
+
 typedef struct __GCVector* _GCVector;
 
-/* Getters ---------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
 /* Gets vector's size.
  * Assumes that 'vector' is a pointer to a valid vector. */
 
 size_t gc_vec_size(const _GCVector vector);
 
+/* ------------------------------------------------------ */
+
 /* Gets vector's capacity.
  * Assumes that 'vector' is a pointer to a valid vector. */
 
 size_t gc_vec_capacity(const _GCVector vector);
+
+/* ------------------------------------------------------ */
 
 /* Gets vector's data field.
  * Assumes that 'vector' is a pointer to a valid vector. */
 
 void* _gc_vec_data(const _GCVector vector);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* INTERNAL FUNCTION - use a convenience macro instead.
  *
@@ -53,7 +59,7 @@ _GCVector _gc_vec_create(size_t capacity, size_t el_size, gc_status* out_status)
 
 void gc_vec_destroy(_GCVector vector, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* INTERNAL FUNCTION - use a vector-specific macro instead.
  *
@@ -84,7 +90,7 @@ void* _gc_vec_at(const _GCVector vector, size_t pos, gc_status* out_status);
 void _gc_vec_set(_GCVector vector, const void* data, size_t pos,
         gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* INTERNAL FUNCTION - use a vector-specific macro instead.
  *
@@ -104,6 +110,8 @@ void _gc_vec_set(_GCVector vector, const void* data, size_t pos,
 void _gc_vec_insert(_GCVector vector, const void* data, size_t pos,
         gc_status* out_status);
 
+/* ------------------------------------------------------ */
+
 /* INTERNAL FUNCTION - use a vector-specific macro instead.
  *
  * Appends new element with data 'data' to the end of the vector.
@@ -120,7 +128,7 @@ void _gc_vec_insert(_GCVector vector, const void* data, size_t pos,
 
 void _gc_vec_push_back(_GCVector vector, const void* data, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* Removes element with position 'pos' from the vector. This causes all elements
  * right of 'pos' to shift leftward.
@@ -132,6 +140,8 @@ void _gc_vec_push_back(_GCVector vector, const void* data, gc_status* out_status
 
 void gc_vec_remove(_GCVector vector, size_t pos, gc_status* out_status);
 
+/* ------------------------------------------------------ */
+
 /* Removes the last element inside the vector.
  * STATUS CODES:
  *   1. GC_SUCCESS - Function call was successful,
@@ -140,7 +150,7 @@ void gc_vec_remove(_GCVector vector, size_t pos, gc_status* out_status);
 
 void gc_vec_pop_back(_GCVector vector, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 
 /* Attempts to re-allocate vector's 'data' field so that it can store 'capacity'
  * elements. 'capacity' argument must be greater than or equal to current's
@@ -154,6 +164,8 @@ void gc_vec_pop_back(_GCVector vector, gc_status* out_status);
  *   3. GC_ERR_ALLOC_FAIL - realloc() returned NULL. */
 
 void gc_vec_reserve(_GCVector vector, size_t capacity, gc_status* out_status);
+
+/* ------------------------------------------------------ */
 
 /* Shrinks the allocated memory for the vector's data field to match its current
  * size, minimizing unused space. This helps optimize memory usage by freeing
