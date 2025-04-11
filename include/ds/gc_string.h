@@ -7,68 +7,26 @@
 #include <stdbool.h>
 #include <string.h>
 
-/* ------------------------------------------------------------------------- */ 
-
-// TODO
 typedef struct _GCString* GCString;
 
-/* ------------------------------------------------------------------------- */ 
+typedef struct GCStringSt
+{
+    char* data;
+    size_t len;
+} GCStringSt;
 
-/* Gets the string's data field(ptr to chars). This data is null-terminated.
- * Assumes that 'str' is a valid ptr. */
-
-char* gc_str_data(GCString str);
-
-/* ------------------------------------------------------ */
-
-/* Gets the string's length.
- * Assumes that 'str' is a valid ptr. */
-
-size_t gc_str_len(GCString str);
-
-/* ------------------------------------------------------ */
-
-/* Gets the string's capacity.
- * Assumes that 'str' is a valid ptr. */
-
-size_t gc_str_capacity(GCString str);
-
-/* -------------------------------------------------------------------------- */
-
-// TODO
 typedef struct GCStringView
 {
     const char* _data;
     size_t _len;
 } GCStringView;
 
-/* ------------------------------------------------------ */
+/* CREATE/DESTROY ---------------------------------------------------------- */
 
-/* Gets the view's data(ptr to chars). This data is NOT necessarily
- * null-terminated.
- * Assumes that 'sv' is a valid ptr. */
-
-const char* gc_sv_data(GCStringView sv);
-
-/* ------------------------------------------------------ */
-
-/* Gets the view's length.
- * Assumes that 'sv' is a valid ptr. */
-
-size_t gc_sv_len(GCStringView sv);
-
-/* ------------------------------------------------------ */
-
-/* Creates a GCStringView out of a GCString. The view's length matches the
- * string's length. */
-
-GCStringView gc_sv(GCString str);
-
-/* -------------------------------------------------------------------------- */
+/* GCString --------------------------------------------- */
 
 /* Default method to create GCStrings. Finds the length of 'content' with
  * strlen(). Performs a call to gc_str_create_().
- *
  * An empty string may be created if 'content' == NULL.
  *
  * STATUS CODES:
@@ -78,13 +36,10 @@ GCStringView gc_sv(GCString str);
 
 GCString gc_str_create(const char* content, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* ---------------------------------- */
 
-/* Default method to create GCStrings. Dynamically allocates enough memory
- * for the internal underlying struct _GCString. 
- * Dynamically allocates enough memory to store (1 + 'len')
- * many characters. The extra byte is reserved for \0.
- *
+/* Creates a GCString by copying the bytes from 'content' to a new, dynamically
+ * allocated chunk of memory. The size of the chunk depends on 'len'.
  * An empty string may be created if 'content' == NULL or 'len' == 0.
  *
  * STATUS CODES:
@@ -94,7 +49,7 @@ GCString gc_str_create(const char* content, gc_status* out_status);
 
 GCString gc_str_create_(const char* content, size_t len, gc_status* out_status);
 
-/* ------------------------------------------------------ */
+/* ---------------------------------- */
 
 /* Creates a GCString from a GCStringView. This is done by performing the call:
  * gc_str_create_(gc_sv_data(sv), gc_sv_len(sv), &_status).
@@ -106,11 +61,10 @@ GCString gc_str_create_(const char* content, size_t len, gc_status* out_status);
 
 GCString gc_str_from_sv(GCStringView sv);
 
-/* ------------------------------------------------------ */
+/* ---------------------------------- */
 
-/* Destroys a GCString. This is done by freeing the dynamically allocated 
- * memory for the char array. After that, the memory used for the underlying
- * struct _GCString is freed.
+/* Destroys a GCString. This frees all the dynamically allocated memory for
+ * both the underlying struct and the char*.
  *
  * STATUS CODES:
  *   1. GC_SUCCESS: Function call was successful;
@@ -118,15 +72,49 @@ GCString gc_str_from_sv(GCStringView sv);
 
 void gc_str_destroy(GCString str, gc_status* out_status);
 
-/* -------------------------------------------------------------------------- */
+/* GCStringView ----------------------------------------- */
+
+/* Creates a GCStringView out of a GCString. */
+GCStringView gc_sv(GCString str);
+
+/* ---------------------------------- */
+
+/* Creates a GCStringView out of a GCStringSt */
+GCStringView gc_sv_(GCStringSt str);
+
+/* GCStringSt ------------------------------------------- */
+
+/* Creates a GCStringSt with its data field pointing to 'text'. The length is
+ * determined by strlen() */
+GCStringSt gc_strst(char* text);
+
+/* GETTERS ----------------------------------------------------------------- */ 
+
+// GCString --------------------------------------------- */
+
+char* gc_str_data(GCString str);
+size_t gc_str_len(GCString str);
+size_t gc_str_capacity(GCString str);
+
+/* GCStringView ----------------------------------------- */
+
+const char* gc_sv_data(GCStringView sv);
+size_t gc_sv_len(GCStringView sv);
+
+/* GCStringSt ------------------------------------------- */
+
+char* gc_strst_data(GCStringSt str);
+size_t gc_strst_len(GCStringSt str);
+
+/* MAIN API ----------------------------------------------------------------- */
 
 /* The string functions below use GCStringView as one/more of the string 
  * parameters. If you want to work with an actual GCString, simply use
- * gc_sv(GCString):
+ * gc_svs(GCString):
 
  * GCString s1 = gc_str_create("a", NULL);
  * GCString s2 = gc_str_create("b", NULL);
- * gc_str_cat(s1, gc_sv(s2), NULL); */
+ * gc_str_cat(s1, gc_svs(s2), NULL); */
 
 /* -------------------------------------------------------------------------- */
 

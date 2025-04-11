@@ -17,85 +17,12 @@ struct _GCString
     size_t capacity;
 };
 
-/* -------------------------------------------------------------------------- */
-
-#define _EXPAND_SUCCESS 0
-#define _EXPAND_ALLOC_FAIL 1
-
 static void _expand_string(GCString str, size_t new_capacity,
-        gc_status* out_status)
-{
-    if((str == NULL) || (str->len > new_capacity))
-    {
-        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
-    }
-    if(str->len == new_capacity)
-    {
-        GC_VRETURN(out_status, GC_SUCCESS);
-    }
+        gc_status* out_status);
 
-    void* new_data = realloc(str->data, new_capacity + 1);
+/* CREATE/DESTROY ---------------------------------------------------------- */
 
-    if(new_data != NULL)
-    {
-        str->data = new_data;
-        str->capacity = new_capacity;
-        GC_VRETURN(out_status, GC_SUCCESS);
-    }
-    else
-    {
-        GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
-    }
-}
-
-static const GCString _STR_EMPTY = {0};
-
-/* -------------------------------------------------------------------------- */
-
-char* gc_str_data(GCString str)
-{
-    return (str != NULL) ? str->data : NULL;
-}
-
-size_t gc_str_len(GCString str)
-{
-    return (str != NULL) ? str->len : 0;
-}
-
-size_t gc_str_capacity(GCString str)
-{
-    return (str != NULL) ? str->capacity : 0;
-}
-
-/* -------------------------------------------------------------------------- */
-
-const char* gc_sv_data(GCStringView sv)
-{
-    return sv._data;
-}
-size_t gc_sv_len(GCStringView sv)
-{
-    return sv._len;
-}
-
-GCStringView gc_sv(GCString str)
-{
-    return (GCStringView) {
-        ._data = (const char*)str->data,
-        ._len = str->len
-    };
-
-}
-
-GCStringView gc_sv_(GCStringSt str)
-{
-    return (GCStringView) {
-        ._data = str.data,
-        ._len = strlen(str.data)
-    };
-}
-
-/* -------------------------------------------------------------------------- */
+/* GCString --------------------------------------------- */
 
 GCString gc_str_create(const char* content, gc_status* out_status)
 {
@@ -114,6 +41,7 @@ GCString gc_str_create(const char* content, gc_status* out_status)
             GC_RETURN(NULL, out_status, GC_ERR_UNHANDLED);
     }
 }
+
 GCString gc_str_create_(const char* content, size_t len,
         gc_status* out_status)
 {
@@ -162,7 +90,79 @@ void gc_str_destroy(GCString str, gc_status* out_status)
     GC_VRETURN(out_status, GC_SUCCESS);
 }
 
-/* -------------------------------------------------------------------------- */
+/* GCStringView ----------------------------------------- */
+
+GCStringView gc_sv(GCString str)
+{
+    return (GCStringView) {
+        ._data = (const char*)str->data,
+        ._len = str->len
+    };
+
+}
+
+GCStringView gc_sv_(GCStringSt str)
+{
+    return (GCStringView) {
+        ._data = str.data,
+        ._len = strlen(str.data)
+    };
+}
+
+/* GCStringSt ------------------------------------------- */
+
+GCStringSt gc_strst(char* text)
+{
+    return (GCStringSt) {
+        .data = text,
+        .len = strlen(text)
+    };
+}
+
+/* GETTERS ----------------------------------------------------------------- */ 
+
+// GCString --------------------------------------------- */
+
+char* gc_str_data(GCString str)
+{
+    return (str != NULL) ? str->data : NULL;
+}
+
+size_t gc_str_len(GCString str)
+{
+    return (str != NULL) ? str->len : 0;
+}
+
+size_t gc_str_capacity(GCString str)
+{
+    return (str != NULL) ? str->capacity : 0;
+}
+
+/* GCStringView ----------------------------------------- */
+
+const char* gc_sv_data(GCStringView sv)
+{
+    return sv._data;
+}
+
+size_t gc_sv_len(GCStringView sv)
+{
+    return sv._len;
+}
+
+/* GCStringSt ------------------------------------------- */
+
+char* gc_strst_data(GCStringSt str)
+{
+    return str.data;
+}
+
+size_t gc_strst_len(GCStringSt str)
+{
+    return str.len;
+}
+
+/* MAIN API ----------------------------------------------------------------- */
 
 static const GCStringView _STR_VIEW_EMPTY = {0};
 
@@ -214,9 +214,9 @@ void gc_str_cat(GCString str1, GCStringView str2, gc_status* out_status)
 
         switch(_status)
         {
-            case _EXPAND_SUCCESS:
+            case GC_SUCCESS:
                 break;
-            case _EXPAND_ALLOC_FAIL:
+            case GC_ERR_ALLOC_FAIL:
                 GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
             default:
                 GC_VRETURN(out_status, GC_ERR_UNHANDLED);
@@ -263,9 +263,9 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
 
         switch(_status)
         {
-            case _EXPAND_SUCCESS:
+            case GC_SUCCESS:
                 break;
-            case _EXPAND_ALLOC_FAIL:
+            case GC_ERR_ALLOC_FAIL:
                 GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
             default:
                 GC_VRETURN(out_status, GC_ERR_UNHANDLED);
@@ -287,10 +287,8 @@ void gc_str_cpy(GCString dest, GCStringView src, gc_status* out_status)
 
 /* -------------------------------------------------------------------------- */
 
-// TODO - switch from char*? add checks for len?
 static gc_str_diff _str_cmp(const char* str1, size_t str1_len,
-        const char* str2, size_t str2_len,
-        bool case_sensitive)
+        const char* str2, size_t str2_len, bool case_sensitive)
 {
     if(str1_len > str2_len)
     {
@@ -474,8 +472,6 @@ struct GCStringFindAllObject gc_str_find_all(GCStringView haystack,
         GC_RETURN(_STR_FIND_ALL_OBJ_EMPTY, out_status, GC_SUCCESS);
     }
 
-    /* ------------------------------------------------------ */
-
     // We don't know how many matches we're going to get - we use a vector
 
     GCVVector vec = gc_vec_create_val(10, struct GCStringFindObject, &_status);
@@ -553,7 +549,6 @@ void gc_str_find_all_obj_destroy(struct GCStringFindAllObject* find_all_obj)
         gc_vec_destroy((_GCVector)find_all_obj->__vec, NULL);
 }
 
-
 /* -------------------------------------------------------------------------- */
 
 static const struct GCStringSepObject _STRING_SEP_OBJ_EMPTY = {0};
@@ -570,8 +565,6 @@ struct GCStringSepObject gc_str_sep(GCStringView str,
     ssize_t i;
     gc_status _status;
 
-    /* ------------------------------------------------------ */
-
     // Find all occurrences
 
     struct GCStringFindAllObject find_all_res = 
@@ -587,8 +580,6 @@ struct GCStringSepObject gc_str_sep(GCStringView str,
             GC_RETURN(_STRING_SEP_OBJ_EMPTY, out_status, GC_ERR_UNHANDLED);
     }
 
-    /* ------------------------------------------------------ */
-
     // Allocate return object
 
     GCStringView* svs = (struct GCStringView*)
@@ -603,8 +594,6 @@ struct GCStringSepObject gc_str_sep(GCStringView str,
         .views = svs
     };
 
-    /* ------------------------------------------------------ */
-
     // Handle special case
 
     if(find_all_res.count == 0)
@@ -612,8 +601,6 @@ struct GCStringSepObject gc_str_sep(GCStringView str,
         svs[0] = str;
         GC_RETURN(ret, out_status, GC_SUCCESS);
     }
-
-    /* ------------------------------------------------------ */
 
     // Handle non-special cases
 
@@ -670,7 +657,6 @@ void gc_str_sep_obj_destroy(struct GCStringSepObject* sep_obj)
     sep_obj->count = 0;
 }
 
-
 /* -------------------------------------------------------------------------- */
 
 void gc_str_reserve(GCString str, size_t capacity, gc_status* out_status)
@@ -697,6 +683,8 @@ void gc_str_reserve(GCString str, size_t capacity, gc_status* out_status)
         GC_VRETURN(out_status, GC_SUCCESS);
     }
 }
+
+/* ------------------------------------------------------ */
 
 void gc_str_fit(GCString str, gc_status* out_status)
 {
@@ -740,3 +728,29 @@ void gc_str_to_lower(GCString str)
 }
 
 /* -------------------------------------------------------------------------- */
+
+static void _expand_string(GCString str, size_t new_capacity,
+        gc_status* out_status)
+{
+    if((str == NULL) || (str->len > new_capacity))
+    {
+        GC_VRETURN(out_status, GC_ERR_INVALID_ARG);
+    }
+    if(str->len == new_capacity)
+    {
+        GC_VRETURN(out_status, GC_SUCCESS);
+    }
+
+    void* new_data = realloc(str->data, new_capacity + 1);
+
+    if(new_data != NULL)
+    {
+        str->data = new_data;
+        str->capacity = new_capacity;
+        GC_VRETURN(out_status, GC_SUCCESS);
+    }
+    else
+    {
+        GC_VRETURN(out_status, GC_ERR_ALLOC_FAIL);
+    }
+}
