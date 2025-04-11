@@ -70,9 +70,9 @@ GCString gc_str_create_(const char* content, size_t len,
     GC_RETURN(str, out_status, GC_SUCCESS);
 }
 
-GCString gc_str_from_sv(GCStringView sv)
+GCString gc_str_create_from_sv(GCStringView sv, gc_status* out_status)
 {
-    return gc_str_create_(sv._data, sv._len, NULL); 
+    return gc_str_create_(sv._data, sv._len, out_status);
 }
 
 void gc_str_destroy(GCString str, gc_status* out_status)
@@ -92,7 +92,7 @@ void gc_str_destroy(GCString str, gc_status* out_status)
 
 /* GCStringView ----------------------------------------- */
 
-GCStringView gc_sv(GCString str)
+GCStringView gc_str_sv(GCString str)
 {
     return (GCStringView) {
         ._data = (const char*)str->data,
@@ -101,7 +101,7 @@ GCStringView gc_sv(GCString str)
 
 }
 
-GCStringView gc_sv_(GCStringSt str)
+GCStringView gc_strst_sv(GCStringSt str)
 {
     return (GCStringView) {
         ._data = str.data,
@@ -116,6 +116,14 @@ GCStringSt gc_strst(char* text)
     return (GCStringSt) {
         .data = text,
         .len = strlen(text)
+    };
+}
+
+GCStringSt gc_strst_(char* text, size_t len)
+{
+    return (GCStringSt) {
+        .data = text,
+        .len = len
     };
 }
 

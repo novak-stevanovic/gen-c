@@ -31,25 +31,13 @@ void sub_ehandler2(GCEventParticipant subscriber,
 int main(int argc, char *argv[])
 {
 
-    GCStringSt s1 = gc_strst("Novak");
-    GCStringSt s2 = gc_strst("Emilija");
+    GCStringSt s = gc_strst("NovakPetarNikola");
 
-    GCString str1 = gc_str_create(NULL, NULL);
-    //
-    gc_str_cat(str1, gc_sv_(s1), NULL);
-    gc_str_cat(str1, gc_sv_(s2), NULL);
+    GCStringView sv = gc_str_substr(gc_strst_sv(s), 1, gc_strst_len(s), NULL);
 
-    printf("%s\n", gc_str_data(str1));
+    GCString substr = gc_str_create_(gc_sv_data(sv), gc_sv_len(sv), NULL);
 
-    GCStringView sep1 = gc_sv_(gc_strst("k"));
-    struct GCStringSepObject obj =
-        gc_str_sep(gc_sv(str1), &sep1, 1, true, NULL);
-
-    size_t i;
-    for(i = 0; i < obj.count; i++)
-    {
-        printf("%s\n", gc_str_data(gc_str_from_sv(obj.views[i])));
-    }
+    printf("%s\n", gc_str_data(substr));
 
     // gc_status _status;
     //
