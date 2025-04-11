@@ -27,7 +27,7 @@ static void _expand_string(GCString str, size_t new_capacity,
 GCString gc_str_create(const char* content, gc_status* out_status)
 {
     gc_status _status;
-    size_t len = strlen(content);
+    size_t len = (content != NULL) ? strlen(content) : 0;
 
     GCString str = gc_str_create_(content, len, &_status);
 
@@ -540,8 +540,7 @@ void gc_str_find_all_obj_destroy(struct GCStringFindAllObject* find_all_obj)
 {
     if(find_all_obj == NULL) return;
 
-    if(find_all_obj->find_objects != NULL)
-        free(find_all_obj->find_objects);
+    find_all_obj->find_objects = NULL;
 
     find_all_obj->count = 0;
 
