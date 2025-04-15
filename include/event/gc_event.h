@@ -46,22 +46,10 @@ struct GCEventSubscription
     GCEventHandler event_handler; // non-NULL
 };
 
-/* ------------------------------------------------------ */
-
-/* Can be used by the library user to differentiate between event types.
- * When an event is raised, a subscriber will have a reference to the event
- * which means he will also be able to know the event type.
- *
- * The user may choose to ignore this feature altogether. */
-
-typedef size_t gc_etype;
-
-#define GC_EVENT_TYPE_DEFAULT 0
-
 /* -------------------------------------------------------------------------- */
 
 /* Dynamically allocates memory for the underlying sturct _GCEvent. Initializes
- * the struct with provided values('source' and 'type').
+ * the struct with provided values('source').
  *
  * RETURN VALUE:
  *   ON SUCCESS: address of the dynamically allocated opaque struct;
@@ -72,8 +60,7 @@ typedef size_t gc_etype;
  *   2. GC_ERR_ALLOC_FAIL: Failed to allocate memory for the underlying struct;
  *   3. GC_ERR_INVALID_ARG: 'source' is NULL. */
 
-GCEvent gc_event_create(GCEventParticipant source, gc_etype type,
-        gc_status* out_status);
+GCEvent gc_event_create(GCEventParticipant source, gc_status* out_status);
 
 /* ------------------------------------------------------ */
 
@@ -146,12 +133,6 @@ bool gc_event_is_subscribed(GCEvent event, GCEventParticipant subscriber);
 /* Returns the event's source. Assumes that 'event' is a valid pointer. */
 
 GCEventParticipant gc_event_source(const GCEvent event);
-
-/* ------------------------------------------------------ */
-
-/* Returns the event's type. Assumes that 'event' is a valid pointer. */
-
-gc_etype gc_event_type(const GCEvent event);
 
 /* -------------------------------------------------------------------------- */
 

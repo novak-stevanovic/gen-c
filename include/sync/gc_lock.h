@@ -22,7 +22,8 @@ typedef struct GCLock
 
 /* Call this function during your application's initialization to set up the
 * lock. It prepares the underlying resources so that the lock can be used for
-* synchronization.
+* synchronization. After initialization, the lock is not signaled(a subsequent
+* gc_lock_wait() will be blocking).
 *
 * ERROR CODES:
 * On success: GC_SUCCESS,

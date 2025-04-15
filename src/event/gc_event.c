@@ -8,16 +8,14 @@
 
 struct _GCEvent
 {
-    gc_etype type;
     GCEventParticipant source;
     GCPVector subscribers;
 };
 
 /* Function assumes correct arguments */
 static void __event_init(GCEvent event, GCEventParticipant source,
-        gc_etype type, gc_status* out_status)
+        gc_status* out_status)
 {
-    event->type = type;
     event->source = source;
 
     gc_status _status;
@@ -36,8 +34,7 @@ static void __event_init(GCEvent event, GCEventParticipant source,
 
 /* -------------------------------------------------------------------------- */
 
-GCEvent gc_event_create(GCEventParticipant source, gc_etype type,
-        gc_status* out_status)
+GCEvent gc_event_create(GCEventParticipant source, gc_status* out_status)
 {
     GCEvent event = (GCEvent)malloc(sizeof(struct _GCEvent));
 
@@ -52,7 +49,7 @@ GCEvent gc_event_create(GCEventParticipant source, gc_etype type,
     }
 
     gc_status _status;
-    __event_init(event, source, type, &_status);
+    __event_init(event, source, &_status);
 
     switch(_status)
     {
@@ -78,7 +75,6 @@ void gc_event_destroy(GCEvent event, gc_status* out_status)
         gc_vec_destroy(event->subscribers, NULL);
 
     event->source = NULL;
-    event->type = GC_EVENT_TYPE_DEFAULT;
 
     free(event);
 
@@ -193,9 +189,4 @@ bool gc_event_is_subscribed(GCEvent event, GCEventParticipant subscriber)
 GCEventParticipant gc_event_source(const GCEvent event)
 {
     return event->source;
-}
-
-gc_etype gc_event_type(const GCEvent event)
-{
-    return event->type;
 }

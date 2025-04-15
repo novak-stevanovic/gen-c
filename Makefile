@@ -1,49 +1,60 @@
-ifndef LTYPE
-    LTYPE = dynamic
-endif
+# -----------------------------------------------------------------------------
+# Validaton & Global Settings
+# -----------------------------------------------------------------------------
 
-# ifneq ($(LTYPE),static)
-# ifneq ($(LTYPE),dynamic)
-# 	$(error LTYPE invalid. USAGE: make)
-# endif
-# endif
+GOAL_COUNT := $(words $(MAKECMDGOALS))
 
-ifneq ($(LTYPE),dynamic)
-    ifneq ($(LTYPE),static)
-        $(error Invalid LTYPE. USAGE: make [TARGET] [LTYPE=dynamic/static])
+ifneq ($(GOAL_COUNT),1)
+    ifneq ($(GOAL_COUNT),0)
+        $(error You cannot specify more than 1 target (got $(GOAL_COUNT): $(MAKECMDGOALS)))
     endif
 endif
 
-# -----------------------------------------------------------------------------
-# Settings
-# -----------------------------------------------------------------------------
+ifndef LIB_TYPE
+    LIB_TYPE = shared
+endif
+
+ifndef PREFIX
+    PREFIX = /usr/local
+endif
+
+ifndef PC_PREFIX
+    PC_PREFIX = /usr/local/lib/pkgconfig
+endif
+
+ifneq ($(LIB_TYPE),shared)
+    ifneq ($(LIB_TYPE),archive)
+        $(error Invalid LIB_TYPE. USAGE: make [TARGET] [LIB_TYPE=shared/archive])
+    endif
+endif
+
+LIB_NAME = genc
+_LIB_NAME = _$(LIB_NAME) # internal
+
+PC_FILE = $(LIB_NAME).pc
+_PC_FILE = _$(PC_FILE) # internal
 
 CC = gcc
-
 C_SRC = $(shell find src -name "*.c")
 C_OBJ = $(patsubst src/%.c,build/%.o,$(C_SRC))
 
-LIB_NAME = genc
-STATIC_LIB_FILE = lib$(LIB_NAME).a
-DYNAMIC_LIB_FILE = lib$(LIB_NAME).so
+# -----------------------------------------------------------------------------
+# Build Flags
+# -----------------------------------------------------------------------------
 
 # ---------------------------------------------------------
-# pkgconfig flags
+# PKGConfig Dependency Flags
 # ---------------------------------------------------------
 
-PKG_DEPS = $(shell PKG_CONFIG_PATH=$(PWD):$PKG_CONFIG_PATH \
-pkg-config --print-requires $(LIB_NAME))
+PC_DEPS = $(shell PKG_CONFIG_PATH=$(PWD):$PC_CONFIG_PATH \
+pkg-config --print-requires $(_LIB_NAME))
 
-PKG_DEPS_CFLAGS = $(foreach dep, $(PKG_DEPS), \
-$(shell PKG_CONFIG_PATH=$(PWD):$PKG_CONFIG_PATH \
-pkg-config --cflags-only-I $(dep)))
+PC_DEPS_CFLAGS = $(foreach dep,$(PC_DEPS),$(shell pkg-config --cflags $(dep)))
 
-PKG_DEPS_LIBS = $(foreach dep, $(PKG_DEPS), \
-$(shell PKG_CONFIG_PATH=$(PWD):$PKG_CONFIG_PATH \
-pkg-config --libs $(dep)))
+PC_DEPS_LIBS = $(foreach dep,$(PC_DEPS),pkg-config --libs $(dep)))
 
 # ---------------------------------------------------------
-# Base flags
+# Base Flags
 # ---------------------------------------------------------
 
 BASE_CFLAGS_DEBUG = -g
@@ -55,100 +66,100 @@ BASE_CFLAGS_INCLUDE = -Iinclude
 BASE_CFLAGS = -c -fPIC $(BASE_CFLAGS_INCLUDE) $(BASE_CFLAGS_MAKE) \
 $(BASE_CFLAGS_WARN) $(BASE_CFLAGS_DEBUG) $(BASE_CFLAGS_OPTIMIZATION)
 
-BASE_CFLAGS += $(PKG_DEPS_CFLAGS)
+BASE_CFLAGS += $(PC_DEPS_CFLAGS)
 
 # ---------------------------------------------------------
-# C source flags
+# C Source Flags
 # ---------------------------------------------------------
 
 SRC_CFLAGS = $(BASE_CFLAGS)
 
 # ---------------------------------------------------------
-# Test flags
+# Test Flags
 # ---------------------------------------------------------
 
 TEST_CFLAGS = $(BASE_CFLAGS)
 
 TEST_LFLAGS = -L. -l$(LIB_NAME)
+TEST_LFLAGS += $(PC_DEPS_LIBS)
 
-ifeq ($(LTYPE),static)
-LIB_FILE = $(STATIC_LIB_FILE)
-LIB_MAKE_COMMAND = ar rcs $(LIB_FILE) $(C_OBJ)
-else 
-LIB_FILE = $(DYNAMIC_LIB_FILE)
+ifeq ($(LIB_TYPE),shared)
 TEST_LFLAGS += -Wl,-rpath,.
-LIB_MAKE_COMMAND = gcc -shared $(C_OBJ) -o $(LIB_FILE)
 endif
 
-TEST_LFLAGS += $(PKG_DEPS_LIBS)
-
 # ---------------------------------------------------------
-# Install
+# Lib Make
 # ---------------------------------------------------------
 
-# To change the prefix, a change in the .pc file is needed as well.
-INSTALL_PREFIX = /usr/local
+LIB_AR_FILE = lib$(LIB_NAME).a
+LIB_SO_FILE = lib$(LIB_NAME).so
 
-PKGCONF_FILE = $(LIB_NAME).pc
-PKGCONF_PREFIX = /usr/local/lib/pkgconfig
+ifeq ($(LIB_TYPE), archive)
+LIB_FILE = $(LIB_AR_FILE)
+LIB_MAKE = ar rcs $(LIB_FILE) $(C_OBJ)
+else 
+LIB_FILE = $(LIB_SO_FILE)
+LIB_MAKE = $(CC) -shared $(C_OBJ) -o $(LIB_FILE)
+endif
 
 # -----------------------------------------------------------------------------
-# Rules
+# Targets
 # -----------------------------------------------------------------------------
 
-.PHONY: all clean install uninstall dirs
+.PHONY: all clean build install uninstall 
 
-all: dirs $(LIB_FILE)
+all: $(LIB_FILE)
 
 $(LIB_FILE): $(C_OBJ)
-	$(LIB_MAKE_COMMAND)
+	$(LIB_MAKE)
 
-$(C_OBJ): build/%.o: src/%.c
+$(C_OBJ): build/%.o: src/%.c build
 	@mkdir -p $(dir $@)
 	$(CC) $(SRC_CFLAGS) $< -o $@
-
-# test -----------------------------------------------------
-
-test: dirs $(C_OBJ) build/tests.o $(LIB_FILE)
-	gcc build/tests.o -o test $(TEST_LFLAGS)
-
-build/tests.o: tests.c
-	gcc $(TEST_CFLAGS) tests.c -o build/tests.o
-
-# dirs -----------------------------------------------------
-
-dirs: | build
 
 build:
 	mkdir -p build/
 
+# test -----------------------------------------------------
+
+test: $(C_OBJ) build/tests.o $(LIB_FILE)
+	gcc build/tests.o -o $@ $(TEST_LFLAGS)
+
+build/tests.o: tests.c
+	gcc $(TEST_CFLAGS) tests.c -o $@
+
 # install --------------------------------------------------
 
-install:
-	@mkdir -p $(INSTALL_PREFIX)/lib
-	cp $(LIB_FILE) $(INSTALL_PREFIX)/lib
+install: $(PC_FILE)
+	@mkdir -p $(PREFIX)/lib
+	@mkdir -p $(PREFIX)/include/$(LIB_NAME)
+	@mkdir -p $(PC_PREFIX)
 
-	@mkdir -p $(INSTALL_PREFIX)/include/$(LIB_NAME)
-	cp -r include/* $(INSTALL_PREFIX)/include/$(LIB_NAME)
+	cp $(LIB_FILE) $(PREFIX)/lib
 
-	@mkdir -p $(PKGCONF_PREFIX)
-	cp $(PKGCONF_FILE) $(PKGCONF_PREFIX)
+	cp -r include/* $(PREFIX)/include/$(LIB_NAME)
 
+	cp $(PC_FILE) $(PC_PREFIX)
+
+$(PC_FILE): $(_PC_FILE)
+	@sed \
+		-e 's|@prefix@|$(PREFIX)|g' \
+		-e 's|@version@|1.0.0|g' \
+		$< > $@
+# uninstall ------------------------------------------------
 
 uninstall:
-	rm -f $(INSTALL_PREFIX)/lib/$(LIB_FILE)
-	rm -rf $(INSTALL_PREFIX)/include/$(LIB_NAME)
-	rm -f $(INSTALL_PREFIX)/lib/pkgconf/$(PKGCONF_FILE)
+	rm -f $(PREFIX)/lib/$(LIB_SO_FILE)
+	rm -f $(PREFIX)/lib/$(LIB_AR_FILE)
+	rm -rf $(PREFIX)/include/$(LIB_NAME)
+	rm -f $(PC_PREFIX)/$(PC_FILE)
 
 # clean ----------------------------------------------------
 
 clean:
 	rm -rf build
-	rm -f $(STATIC_LIB_FILE)
-	rm -f $(DYNAMIC_LIB_FILE)
+	rm -f $(LIB_AR_FILE)
+	rm -f $(LIB_SO_FILE)
 	rm -f test
 	rm -f compile_commands.json
-
-# ----------------------------------------------------------
-
--include $(wildcard build/dependencies/*.d)
+	rm -f $(PC_FILE)
